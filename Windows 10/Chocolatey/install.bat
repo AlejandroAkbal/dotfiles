@@ -49,6 +49,7 @@ choco install mobaxterm
 call refreshenv
 
 rem Miscelania
+choco install chocolateygui
 choco install obs-studio 
 choco install qbittorrent
 choco install 7zip
