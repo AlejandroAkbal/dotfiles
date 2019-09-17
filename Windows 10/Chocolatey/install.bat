@@ -1,8 +1,6 @@
 @echo off
 
 rem Get admin
-set "params=%*"
-cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) && fsutil dirty query %systemdrive% 1>nul 2>nul || (  echo Set UAC = CreateObject^("Shell.Application"^) : UAC.ShellExecute "cmd.exe", "/k cd ""%~sdp0"" && %~s0 %params%", "", "runas", 1 >> "%temp%\getadmin.vbs" && "%temp%\getadmin.vbs" && exit /B )
 
 echo This will first install chocolatey, then other tools
 echo .
@@ -28,6 +26,7 @@ choco install firefox
 choco install firefox-dev --pre
 choco install tor-browser
 choco install googlechrome
+call refreshenv
 
 rem Game related
 choco install steam
@@ -35,9 +34,11 @@ choco install goggalaxy
 choco install epicgameslauncher
 choco install vortex
 choco install minecraft
+call refreshenv
 
 rem Communication related
 choco install discord
+call refreshenv
 
 rem Software Development related
 choco install nodejs
@@ -45,16 +46,19 @@ choco install github-desktop
 choco install notepadplusplus
 choco install vscode
 choco install mobaxterm
+call refreshenv
 
 rem Miscelania
 choco install obs-studio 
 choco install qbittorrent
 choco install 7zip
 choco install f.lux
+call refreshenv
 
 rem Media related
 choco install spotify 
 choco install vlc
+call refreshenv
 
 rem Utilities
 choco install bulk-crap-uninstaller
@@ -64,12 +68,15 @@ choco install wiztree
 choco install rufus
 choco install virtualbox
 choco install openhardwaremonitor 
+call refreshenv
 
 rem Office and work related
 choco install libreoffice-fresh 
+call refreshenv
 
 rem Libraries related
 choco install jdk8 
+call refreshenv
 
 :END
 
