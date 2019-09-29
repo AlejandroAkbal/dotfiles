@@ -69,6 +69,7 @@ choco install wiztree
 choco install rufus
 choco install virtualbox
 choco install openhardwaremonitor 
+choco install fastcopy
 call refreshenv
 
 rem Office and work related
