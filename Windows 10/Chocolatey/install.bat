@@ -42,6 +42,7 @@ call refreshenv
 
 rem Software Development related
 choco install nodejs
+choco install git
 choco install github-desktop
 choco install notepadplusplus
 choco install vscode
