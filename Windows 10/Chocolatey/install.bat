@@ -21,6 +21,8 @@ call refreshenv
 
 :START
 
+choco feature enable -n allowGlobalConfirmation
+
 rem Browser related
 choco install firefox
 choco install firefox-dev --pre
