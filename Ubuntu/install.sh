@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Install dependencies
+sudo apt update
 sudo apt install nodejs npm python3-pip git gdebi-core
 
 # Install apps
