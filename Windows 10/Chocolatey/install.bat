@@ -56,6 +56,7 @@ choco install chocolateygui
 choco install obs-studio 
 choco install qbittorrent
 choco install 7zip
+choco install click-monitor-ddc
 choco install f.lux
 call refreshenv
 
