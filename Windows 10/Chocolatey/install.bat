@@ -10,6 +10,7 @@ echo Ensure that your cmd.exe runs as Administrator
 echo .
 
 @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
+
 choco feature enable -n=allowGlobalConfirmation
 pause
 
@@ -24,68 +25,65 @@ call refreshenv
 choco feature enable -n allowGlobalConfirmation
 
 rem Browser related
-choco install firefox
 choco install firefox-dev --pre
-choco install tor-browser
 choco install googlechrome
-call refreshenv
 
 rem Game related
 choco install steam
-choco install goggalaxy
-choco install epicgameslauncher
 choco install vortex
 choco install minecraft
-call refreshenv
 
 rem Communication related
 choco install discord
-call refreshenv
 
 rem Software Development related
-choco install nodejs
 choco install git
 choco install github-desktop
-choco install notepadplusplus
-choco install vscode
-choco install mobaxterm
-call refreshenv
 
-rem Miscelania
-choco install chocolateygui
-choco install obs-studio 
-choco install qbittorrent
-choco install 7zip
-choco install click-monitor-ddc
-choco install f.lux
-call refreshenv
+choco install vscode
+choco install visualstudio2019community 
+choco install notepadplusplus
+
+choco install mobaxterm
+choco install postman
+choco install dbeaver
 
 rem Media related
+choco install obs-studio 
 choco install spotify 
 choco install vlc
-call refreshenv
 
 rem Utilities
-choco install bulk-crap-uninstaller
+choco install 7zip
+
+choco install f.lux
+choco install click-monitor-ddc
+
 choco install vnc-viewer
 choco install vnc-connect
+
+choco install bulk-crap-uninstaller
 choco install wiztree
 choco install rufus
+choco install fastcopy
+
 choco install virtualbox
 choco install openhardwaremonitor 
-choco install fastcopy
-call refreshenv
+
+choco install deluge
+choco install chocolateygui
 
 rem Office and work related
 choco install libreoffice-fresh 
-call refreshenv
 
 rem Libraries related
+choco install nodejs
+choco install python3
 choco install jdk8 
 call refreshenv
 
 :END
 
-echo To keep your system updated, run update-all.bat regularly from an administrator CMD.exe.
+echo To keep your system updated, run choco upgrade all periodically
 echo .
 pause
