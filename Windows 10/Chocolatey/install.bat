@@ -74,6 +74,7 @@ choco install deluge
 choco install chocolateygui
 
 rem Office and work related
+choco install krita
 choco install libreoffice-fresh 
 
 rem Libraries related
