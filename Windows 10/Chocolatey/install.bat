@@ -75,6 +75,7 @@ choco install chocolateygui
 
 rem Office and work related
 choco install krita
+choco install figma
 choco install libreoffice-fresh 
 
 rem Libraries related
