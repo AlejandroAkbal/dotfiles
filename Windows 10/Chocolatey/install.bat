@@ -66,6 +66,7 @@ choco install bulk-crap-uninstaller
 choco install wiztree
 choco install rufus
 choco install fastcopy
+choco install eraser
 
 choco install virtualbox
 choco install openhardwaremonitor 
