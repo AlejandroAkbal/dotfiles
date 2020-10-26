@@ -40,6 +40,8 @@ rem Software Development related
 choco install git
 choco install github-desktop
 
+choco install docker-desktop
+
 choco install vscode
 choco install visualstudio2019community 
 choco install notepadplusplus
