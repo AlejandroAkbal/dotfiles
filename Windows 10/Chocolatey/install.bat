@@ -25,7 +25,7 @@ call refreshenv
 choco feature enable -n allowGlobalConfirmation
 
 rem Browser related
-choco install firefox-dev --pre
+choco install firefox-dev
 choco install googlechrome
 
 rem Game related
