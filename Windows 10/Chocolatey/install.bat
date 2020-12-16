@@ -30,6 +30,8 @@ choco install googlechrome
 
 rem Game related
 choco install steam
+choco install goggalaxy
+choco install nvidia-geforce-now
 choco install vortex
 choco install minecraft
 
@@ -52,6 +54,9 @@ choco install mobaxterm
 choco install postman
 choco install dbeaver
 
+rem Security related
+choco install authy-desktop
+
 rem Media related
 choco install obs-studio 
 choco install spotify 
@@ -59,6 +64,8 @@ choco install vlc
 
 rem Utilities
 choco install 7zip
+
+choco install powertoys
 
 choco install f.lux
 
@@ -69,10 +76,13 @@ choco install vnc-viewer
 choco install vnc-connect
 
 choco install bulk-crap-uninstaller
+choco install everything
 choco install wiztree
 choco install rufus
 choco install fastcopy
 choco install eraser
+
+choco install jdownloader
 
 choco install virtualbox
 
