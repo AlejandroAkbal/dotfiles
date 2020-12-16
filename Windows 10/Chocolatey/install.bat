@@ -46,6 +46,8 @@ choco install vscode
 choco install visualstudio2019community 
 choco install notepadplusplus
 
+choco install figma
+
 choco install mobaxterm
 choco install postman
 choco install dbeaver
@@ -59,7 +61,9 @@ rem Utilities
 choco install 7zip
 
 choco install f.lux
+
 choco install click-monitor-ddc
+choco install openhardwaremonitor 
 
 choco install vnc-viewer
 choco install vnc-connect
@@ -71,14 +75,12 @@ choco install fastcopy
 choco install eraser
 
 choco install virtualbox
-choco install openhardwaremonitor 
 
 choco install deluge
 choco install chocolateygui
 
 rem Office and work related
 choco install krita
-choco install figma
 choco install libreoffice-fresh 
 
 rem Libraries related
