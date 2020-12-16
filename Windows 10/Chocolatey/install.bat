@@ -90,7 +90,7 @@ choco install krita
 choco install libreoffice-fresh 
 
 rem Libraries related
-choco install nodejs
+choco install nvm
 choco install python3
 choco install jdk8 
 call refreshenv
