@@ -59,6 +59,8 @@ choco install obs-studio
 choco install spotify 
 choco install vlc
 
+choco install equalizerapo
+
 rem Utilities
 choco install 7zip
 
