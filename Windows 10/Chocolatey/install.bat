@@ -51,6 +51,10 @@ choco install mobaxterm
 choco install postman
 choco install dbeaver
 
+rem Development fonts
+choco install jetbrainsmono
+choco install firacode
+
 rem Security related
 choco install authy-desktop
 
