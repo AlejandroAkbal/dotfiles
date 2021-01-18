@@ -22,7 +22,8 @@ call refreshenv
 
 :START
 
-choco feature enable -n allowGlobalConfirmation
+choco feature enable -n=allowGlobalConfirmation
+choco feature enable -n=useRememberedArgumentsForUpgrades
 
 rem Browser related
 choco install firefox-dev
