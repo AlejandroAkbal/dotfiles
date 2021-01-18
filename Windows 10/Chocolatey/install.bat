@@ -50,7 +50,7 @@ choco install notepadplusplus
 choco install figma
 
 choco install mobaxterm
-choco install postman
+choco install insomnia-rest-api-client
 choco install dbeaver
 
 rem Development fonts
@@ -94,13 +94,13 @@ choco install virtualbox
 choco install deluge
 
 rem Office and work related
-choco install krita
+choco install gimp
 choco install libreoffice-fresh 
 
 rem Libraries related
 choco install nvm
 choco install python3
-choco install jdk8 
+choco install openjdk 
 call refreshenv
 
 :END
