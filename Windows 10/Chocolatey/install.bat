@@ -34,16 +34,16 @@ choco install steam
 choco install goggalaxy
 choco install nvidia-geforce-now
 choco install vortex
-choco install minecraft
+choco install minecraft-launcher --params "'/NOICON'"
 
 rem Communication related
 choco install discord
 
 rem Software Development related
-choco install git
+choco install git --params "/NoAutoCrlf"
 choco install github-desktop
 
-choco install vscode
+choco install vscode --params "/NoDesktopIcon /NoQuicklaunchIcon /NoContextMenuFiles /NoContextMenuFolders"
 choco install notepadplusplus
 
 choco install figma
