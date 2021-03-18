@@ -31,8 +31,8 @@ choco install googlechrome
 
 rem Game related
 choco install steam
-choco install goggalaxy
-choco install nvidia-geforce-now
+@REM choco install goggalaxy
+@REM choco install nvidia-geforce-now
 choco install vortex
 choco install minecraft-launcher --params "'/NOICON'"
 
@@ -54,7 +54,7 @@ choco install postman
 choco install dbeaver
 
 rem Development fonts
-choco install jetbrainsmono
+@REM choco install jetbrainsmono
 choco install firacode
 
 rem Security related
@@ -65,7 +65,7 @@ choco install obs-studio
 choco install spotify 
 choco install vlc
 
-choco install equalizerapo
+@REM choco install equalizerapo
 
 rem Utilities
 choco install 7zip
@@ -74,8 +74,8 @@ choco install powertoys
 
 choco install f.lux
 
-choco install click-monitor-ddc
-choco install openhardwaremonitor 
+@REM choco install click-monitor-ddc
+@REM choco install openhardwaremonitor 
 
 choco install vnc-viewer
 choco install vnc-connect
