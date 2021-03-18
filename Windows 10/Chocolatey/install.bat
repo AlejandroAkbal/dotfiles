@@ -50,7 +50,7 @@ choco install notepadplusplus
 choco install figma
 
 choco install mobaxterm
-choco install insomnia-rest-api-client
+choco install postman
 choco install dbeaver
 
 rem Development fonts
