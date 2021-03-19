@@ -71,6 +71,7 @@ choco install vlc
 
 rem Utilities
 choco install 7zip
+choco install google-backup-and-sync
 
 choco install powertoys
 
