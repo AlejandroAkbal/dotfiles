@@ -47,6 +47,8 @@ choco install github-desktop
 choco install vscode --params "/NoDesktopIcon /NoQuicklaunchIcon /NoContextMenuFiles /NoContextMenuFolders"
 choco install notepadplusplus
 
+choco install docker-desktop
+
 choco install figma
 
 choco install mobaxterm
