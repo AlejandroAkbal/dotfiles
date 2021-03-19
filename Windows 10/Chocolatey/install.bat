@@ -26,7 +26,7 @@ choco feature enable -n=allowGlobalConfirmation
 choco feature enable -n=useRememberedArgumentsForUpgrades
 
 rem Browser related
-choco install firefox-dev
+choco install firefox-dev --pre
 choco install googlechrome
 
 rem Game related
