@@ -75,8 +75,7 @@ choco install google-backup-and-sync
 
 choco install powertoys
 
-choco install f.lux
-
+@REM choco install f.lux
 @REM choco install click-monitor-ddc
 @REM choco install openhardwaremonitor 
 
