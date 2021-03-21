@@ -30,7 +30,7 @@ function install_snap() {
 # Basics
 install_snap "spotify"
 
-install_snap "authy"
+install_snap "--beta authy"
 
 # Browsers
 install_snap "chromium"
