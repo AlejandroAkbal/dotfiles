@@ -1,10 +1,8 @@
 #!/bin/bash
 
-bash copy_dotfiles.sh
 
-# Install dependencies
-sudo apt update && sudo apt full-upgrade -y
 
+# Functions
 function install() {
     which $1 &>/dev/null
 
@@ -26,6 +24,13 @@ function install_snap() {
         echo "Already installed snap: ${1}"
     fi
 }
+
+
+# Copy dotfiles
+bash copy_dotfiles.sh
+
+# Install dependencies
+sudo apt update && sudo apt full-upgrade -y
 
 # Basics
 install_snap "spotify"
