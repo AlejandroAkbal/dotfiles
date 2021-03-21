@@ -1,6 +1,13 @@
 #!/bin/bash
 
+function on_error() {
+    printf "\nScript failed to execute:"
+    printf "\nError on line $1\n"
 
+    exit 1
+}
+
+trap 'on_error $LINENO' ERR
 
 # Functions
 function install() {
