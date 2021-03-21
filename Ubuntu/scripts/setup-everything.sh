@@ -72,7 +72,7 @@ install "python3-pip"
 # Fonts
 install "fonts-firacode"
 
-# Run all scripts in programs/
-for script in apps/*.sh; do
-    bash "$script" -H
+# Run all scripts in directory
+for f in apps/*.sh; do
+    bash "$f" || break
 done
