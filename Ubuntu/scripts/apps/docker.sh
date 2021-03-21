@@ -25,4 +25,8 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io
 
 sudo docker run hello-world
 
+# Enable services
+sudo systemctl enable docker.service
+sudo systemctl enable containerd.service
+
 printf "\n$APP_NAME successfully installed\n"
