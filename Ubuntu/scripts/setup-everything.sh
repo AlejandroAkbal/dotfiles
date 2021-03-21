@@ -1,5 +1,7 @@
 #!/bin/bash
 
+bash copy_dotfiles.sh
+
 # Install dependencies
 sudo apt update && sudo apt full-upgrade -y
 
