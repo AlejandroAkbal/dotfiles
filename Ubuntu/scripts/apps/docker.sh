@@ -29,4 +29,7 @@ sudo docker run hello-world
 sudo systemctl enable docker.service
 sudo systemctl enable containerd.service
 
+# Add `docker` group to current user
+sudo usermod -aG docker $USER
+
 printf "\n$APP_NAME successfully installed\n"
