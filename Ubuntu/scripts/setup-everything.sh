@@ -32,7 +32,6 @@ function install_snap() {
     fi
 }
 
-
 # Copy dotfiles
 bash copy_dotfiles.sh
 
@@ -76,6 +75,9 @@ install_snap "dbeaver-ce"
 install "unzip"
 
 install "gdebi-core"
+
+install "chrome-gnome-shell"
+xdg-open https://extensions.gnome.org/extension/3733/tiling-assistant
 
 # Languages
 install "python3-venv"
