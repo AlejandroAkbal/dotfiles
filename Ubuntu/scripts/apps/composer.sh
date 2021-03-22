@@ -13,4 +13,6 @@ php -r "if (hash_file('sha384', 'composer-setup.php') === '756890a4488ce9024fc62
 sudo php composer-setup.php --install-dir=/usr/local/bin/ --filename=composer
 php -r "unlink('composer-setup.php');"
 
+sudo systemctl disable apache2 --now
+
 printf "\n$APP_NAME successfully installed\n"
