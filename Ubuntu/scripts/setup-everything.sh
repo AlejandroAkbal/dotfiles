@@ -69,6 +69,8 @@ install_snap "figma-linux"
 # Utils
 install "git"
 
+install "virtualbox virtualbox-ext-pack"
+
 install_snap "postman"
 install_snap "dbeaver-ce"
 
