@@ -1,0 +1,5 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Set default mic
+@reboot alejandro pactl set-default-source 'alsa_input.pci-0000_00_1f.3.analog-stereo'

@@ -88,6 +88,9 @@ install "python3-pip"
 # Fonts
 install "fonts-firacode"
 
+# Add cron jobs
+crontab -u -i $USER "../cron/crontab.cron"
+
 # Run all scripts in directory
 for f in apps/*.sh; do
     bash "$f" || break
