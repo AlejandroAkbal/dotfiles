@@ -81,6 +81,9 @@ install "gdebi-core"
 install "chrome-gnome-shell"
 xdg-open https://extensions.gnome.org/extension/3733/tiling-assistant
 
+# Office
+install_snap "onlyoffice-desktopeditors"
+
 # Languages
 install "python3-venv"
 install "python3-pip"
