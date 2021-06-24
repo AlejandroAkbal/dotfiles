@@ -63,6 +63,8 @@ install "obs-studio"
 install_snap "--classic code"
 install_snap "--classic phpstorm"
 
+install_snap "termius-app"
+
 # Design
 install_snap "figma-linux"
 
