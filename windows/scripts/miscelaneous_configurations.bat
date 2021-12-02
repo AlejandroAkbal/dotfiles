@@ -9,3 +9,4 @@ echo Configuring windows to autostart ssh-agent
 Set-Service ssh-agent -StartupType Automatic
 
 echo Done
+pause
