@@ -2,9 +2,9 @@
 
 Where I save scripts and files necessary to set up a fresh OS installation.
 
-## Ubuntu
+## Linux
 
-Check the [Ubuntu directory](ubuntu).
+Check the [Linux directory](linux).
 
 ## Windows 10
 
