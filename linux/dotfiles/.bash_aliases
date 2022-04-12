@@ -1,5 +1,7 @@
-alias sail='bash vendor/bin/sail'
+
+# Development
+alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'
 
 # Python
-alias venv='python3 -m venv ./venv'
-alias venva='source ./venv/bin/activate'
+alias pyenv='python3 -m venv ./venv'
+alias pyenv_a='source ./venv/bin/activate'
