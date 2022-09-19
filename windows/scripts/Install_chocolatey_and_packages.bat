@@ -32,6 +32,7 @@ choco install googlechrome
 rem Game related
 choco install steam
 @REM choco install goggalaxy
+choco install itch
 @REM choco install nvidia-geforce-now
 choco install vortex
 @REM choco install minecraft-launcher --params "'/NOICON'"
@@ -98,6 +99,8 @@ choco install deluge
 rem Office and work related
 choco install gimp
 choco install libreoffice-fresh 
+
+choco install workrave
 
 rem Libraries related
 choco install nvm
