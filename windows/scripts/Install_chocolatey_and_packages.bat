@@ -34,7 +34,7 @@ choco install steam
 @REM choco install goggalaxy
 @REM choco install nvidia-geforce-now
 choco install vortex
-choco install minecraft-launcher --params "'/NOICON'"
+@REM choco install minecraft-launcher --params "'/NOICON'"
 
 rem Communication related
 choco install discord
@@ -45,19 +45,19 @@ choco install git --params "/NoAutoCrlf"
 choco install github-desktop
 
 choco install vscode --params "/NoDesktopIcon /NoQuicklaunchIcon /NoContextMenuFiles /NoContextMenuFolders"
-choco install notepadplusplus
+@REM choco install notepadplusplus
 
 choco install docker-desktop
 
-choco install figma
+@REM choco install figma
 
-choco install mobaxterm
-choco install postman
-choco install dbeaver
+@REM choco install mobaxterm
+@REM choco install postman
+@REM choco install dbeaver
 
 rem Development fonts
 @REM choco install jetbrainsmono
-choco install firacode
+@REM choco install firacode
 
 rem Security related
 choco install authy-desktop
@@ -103,8 +103,11 @@ rem Libraries related
 choco install nvm
 choco install python3
 choco install openjdk 
-call refreshenv
 
+rem Windows OS related
+choco install sophiapp
+
+call refreshenv
 :END
 
 echo To keep your system updated, run choco upgrade all periodically
