@@ -109,6 +109,7 @@ choco install openjdk
 
 rem Windows OS related
 choco install sophiapp
+choco install auto-dark-mode
 
 call refreshenv
 :END
