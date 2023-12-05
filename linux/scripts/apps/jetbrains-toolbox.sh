@@ -6,14 +6,14 @@ printf "Installing $APP_NAME"
 
 cd /tmp
 
-wget https://download-cdn.jetbrains.com/toolbox/jetbrains-toolbox-1.22.10970.tar.gz
+wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-2.1.1.18388.tar.gz -O jetbrains-toolbox.tar.gz
 
-tar -xvzf jetbrains-toolbox-1.22.10970.tar.gz
+sudo tar -xzf jetbrains-toolbox.tar.gz -C /opt
 
-chmod +x jetbrains-toolbox-1.22.10970/jetbrains-toolbox
+sudo chmod +x /opt/jetbrains-toolbox/jetbrains-toolbox
 
-mv jetbrains-toolbox-1.22.10970/jetbrains-toolbox /usr/local/bin/jetbrains-toolbox
+/opt/jetbrains-toolbox/jetbrains-toolbox
 
-rmdir jetbrains-toolbox-1.22.10970
+rm jetbrains-toolbox.tar.gz
 
 printf "\n$APP_NAME successfully installed\n"
