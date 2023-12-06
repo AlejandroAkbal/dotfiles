@@ -11,7 +11,6 @@ echo .
 
 @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
 
-choco feature enable -n=allowGlobalConfirmation
 pause
 
 echo Now chocolatey should be ready and we can go ahead
@@ -26,13 +25,13 @@ choco feature enable -n=allowGlobalConfirmation
 choco feature enable -n=useRememberedArgumentsForUpgrades
 
 rem Browser related
-choco install librewolf
+choco install firefox
 choco install googlechrome
 
 rem Game related
 choco install steam
 @REM choco install goggalaxy
-choco install itch
+@REM choco install itch
 @REM choco install nvidia-geforce-now
 choco install vortex
 @REM choco install minecraft-launcher --params "'/NOICON'"
@@ -68,16 +67,8 @@ choco install obs-studio
 choco install spotify 
 choco install vlc
 
-@REM choco install equalizerapo
-
 rem Utilities
-choco install 7zip
-choco install google-backup-and-sync
-
 choco install powertoys
-
-@REM choco install f.lux
-@REM choco install click-monitor-ddc
 @REM choco install openhardwaremonitor 
 
 choco install vnc-viewer
@@ -94,13 +85,13 @@ choco install jdownloader
 
 choco install virtualbox
 
-choco install deluge
+choco install qbittorrent
 
 rem Office and work related
 choco install gimp
-choco install libreoffice-fresh 
+choco install libreoffice-fresh
 
-choco install workrave
+choco install stretchly
 
 rem Libraries related
 choco install nvm
