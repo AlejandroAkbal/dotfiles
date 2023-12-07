@@ -40,8 +40,9 @@ rem Communication related
 choco install discord
 
 rem Software Development related
-choco install powershell-core --install-arguments="'ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1'" --packageparameters '"/CleanUpPath"' 
+choco install powershell-core --install-arguments="'DISABLE_TELEMETRY'" --packageparameters '"/CleanUpPath"'
 choco install git --params "/NoAutoCrlf"
+
 choco install github-desktop
 
 choco install vscode --params "/NoDesktopIcon /NoQuicklaunchIcon /NoContextMenuFiles /NoContextMenuFolders"
@@ -51,7 +52,7 @@ choco install docker-desktop
 
 @REM choco install figma
 
-@REM choco install mobaxterm
+choco install termius
 @REM choco install postman
 @REM choco install dbeaver
 
