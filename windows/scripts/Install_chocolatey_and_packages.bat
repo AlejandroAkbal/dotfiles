@@ -37,7 +37,7 @@ choco install vortex
 @REM choco install minecraft-launcher --params "'/NOICON'"
 
 rem Communication related
-choco install discord
+@REM choco install discord
 
 rem Software Development related
 choco install powershell-core --install-arguments="'DISABLE_TELEMETRY'" --packageparameters '"/CleanUpPath"'
@@ -46,9 +46,11 @@ choco install git --params "/NoAutoCrlf"
 choco install github-desktop
 
 choco install vscode --params "/NoDesktopIcon /NoQuicklaunchIcon /NoContextMenuFiles /NoContextMenuFolders"
+choco install jetbrainstoolbox
 @REM choco install notepadplusplus
 
-choco install docker-desktop
+@REM choco install docker-desktop
+choco install podman-desktop
 
 @REM choco install figma
 
@@ -65,32 +67,32 @@ choco install authy-desktop
 
 rem Media related
 choco install obs-studio 
-choco install spotify 
+@REM choco install spotify
 choco install vlc
 
 rem Utilities
 choco install powertoys
 @REM choco install openhardwaremonitor 
 
-choco install vnc-viewer
-choco install vnc-connect
+@REM choco install vnc-viewer
+@REM choco install vnc-connect
 
 choco install bulk-crap-uninstaller
 choco install everything
 choco install wiztree
 choco install rufus
-choco install fastcopy
-choco install eraser
+@REM choco install fastcopy
+@REM choco install eraser
 
 choco install jdownloader
 
-choco install virtualbox
+@REM choco install virtualbox
 
 choco install qbittorrent
 
 rem Office and work related
-choco install gimp
-choco install libreoffice-fresh
+@REM choco install gimp
+@REM choco install libreoffice-fresh
 
 choco install stretchly
 
