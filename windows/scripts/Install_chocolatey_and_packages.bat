@@ -24,6 +24,8 @@ call refreshenv
 choco feature enable -n=allowGlobalConfirmation
 choco feature enable -n=useRememberedArgumentsForUpgrades
 
+choco install choco-upgrade-all-at --params "'/DAILY:yes /TIME:10:00 /ABORTTIME:14:00'"
+
 rem Browser related
 choco install firefox
 choco install googlechrome
