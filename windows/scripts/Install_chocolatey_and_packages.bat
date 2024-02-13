@@ -107,6 +107,8 @@ rem Windows OS related
 choco install sophiapp
 choco install auto-dark-mode
 
+choco install adb
+
 choco install nvidia-display-driver
 
 call refreshenv
