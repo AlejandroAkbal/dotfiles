@@ -6,7 +6,7 @@ printf "Installing $APP_NAME"
 
 cd /tmp
 
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
 source ~/.bashrc
 
