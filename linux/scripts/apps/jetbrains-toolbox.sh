@@ -2,18 +2,11 @@
 
 APP_NAME="Jetbrains Toolbox"
 
+# https://github.com/nagygergo/jetbrains-toolbox-install
 printf "Installing $APP_NAME"
 
-cd /tmp
+sudo apt install -y libfuse2 libxi6 libxrender1 libxtst6 mesa-utils libfontconfig libgtk-3-bin tar
 
-wget https://download.jetbrains.com/toolbox/jetbrains-toolbox-2.1.1.18388.tar.gz -O jetbrains-toolbox.tar.gz
-
-sudo tar -xzf jetbrains-toolbox.tar.gz -C /opt
-
-sudo chmod +x /opt/jetbrains-toolbox/jetbrains-toolbox
-
-/opt/jetbrains-toolbox/jetbrains-toolbox
-
-rm jetbrains-toolbox.tar.gz
+curl -fsSL https://raw.githubusercontent.com/nagygergo/jetbrains-toolbox-install/master/jetbrains-toolbox.sh | bash
 
 printf "\n$APP_NAME successfully installed\n"

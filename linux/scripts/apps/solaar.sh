@@ -1,0 +1,31 @@
+# Add to ~/.config/solaar/rules.yaml
+---
+- Rule:
+  - MouseGesture: Mouse Right
+  - KeyPress:
+    - [Super_L, Page_Down]
+    - click
+- Rule:
+  - MouseGesture: Mouse Left
+  - KeyPress:
+    - [Super_L, Page_Up]
+    - click
+- Rule:
+  - MouseGesture: Mouse Up
+  - KeyPress:
+    - [Super_L, a]
+    - click
+- Rule:
+  - MouseGesture: Mouse Down
+  - KeyPress:
+    - [Super_L, d]
+    - click
+- Rule:
+  - And:
+    - Key: [Mouse Gesture Button, released]
+    - MouseGesture: []
+  - KeyPress:
+    - [Super_L, s]
+    - click
+...
+---
