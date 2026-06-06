@@ -24,8 +24,6 @@ OpenCode plugins and provider settings stay in `~/.config/opencode/opencode.json
 
 ## Matomo MCP
 
-Requires the [MCP Server plugin](https://plugins.matomo.org/McpServer) enabled in your Matomo instance.
-
 1. Ensure the [MCP Server plugin](https://plugins.matomo.org/McpServer) is enabled on `matomo.akbal.dev`.
 2. Create an auth token: **Administration → Personal → Security → Auth Tokens**.
 3. Add `MATOMO_API_TOKEN` to `~/.config/agent-secrets.env`.
