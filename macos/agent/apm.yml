@@ -51,5 +51,11 @@ dependencies:
       args:
         - "-y"
         - "@danielsogl/lighthouse-mcp@latest"
+    - name: matomo
+      registry: false
+      transport: http
+      url: https://matomo.akbal.dev/index.php?module=API&method=McpServer.mcp&format=mcp
+      headers:
+        Authorization: "Bearer ${MATOMO_API_TOKEN}"
 includes: auto
 scripts: {}

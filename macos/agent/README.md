@@ -2,7 +2,7 @@
 
 Shared MCP servers and rules for **Cursor**, **OpenCode**, and **Codex**.
 
-Managed MCP servers: `context7`, `n8n-mcp`, `sentry`, `coolify`, `chrome-devtools`, `lighthouse`.
+Managed MCP servers: `context7`, `n8n-mcp`, `sentry`, `coolify`, `chrome-devtools`, `lighthouse`, `matomo`.
 
 ## Setup
 
@@ -21,6 +21,17 @@ Managed MCP servers: `context7`, `n8n-mcp`, `sentry`, `coolify`, `chrome-devtool
 | Rules (Codex/OpenCode) | `~/AGENTS.md` (via `apm compile`) |
 
 OpenCode plugins and provider settings stay in `~/.config/opencode/opencode.json`.
+
+## Matomo MCP
+
+Requires the [MCP Server plugin](https://plugins.matomo.org/McpServer) enabled in your Matomo instance.
+
+1. Ensure the [MCP Server plugin](https://plugins.matomo.org/McpServer) is enabled on `matomo.akbal.dev`.
+2. Create an auth token: **Administration → Personal → Security → Auth Tokens**.
+3. Add `MATOMO_API_TOKEN` to `~/.config/agent-secrets.env`.
+4. Run `agent-sync`.
+
+See [Matomo's Claude Code integration guide](https://matomo.org/faq/integrate-the-mcp-server-with-claude-code/).
 
 ## Add an MCP server
 
