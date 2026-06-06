@@ -1,0 +1,55 @@
+name: agent-config
+version: 1.0.0
+description: Machine-wide MCP and rules for Cursor, OpenCode, and Codex
+author: Alejandro Akbal
+targets:
+  - cursor
+  - opencode
+  - codex
+dependencies:
+  apm: []
+  mcp:
+    - name: context7
+      registry: false
+      transport: http
+      url: https://mcp.context7.com/mcp
+    - name: n8n-mcp
+      registry: false
+      transport: http
+      url: https://n8n.akbal.dev/mcp-server/http
+      headers:
+        Authorization: "Bearer ${N8N_MCP_TOKEN}"
+    - name: sentry
+      registry: false
+      transport: stdio
+      command: pnpx
+      args:
+        - "-y"
+        - "mcp-remote@latest"
+        - "https://mcp.sentry.dev/mcp"
+    - name: coolify
+      registry: false
+      transport: stdio
+      command: pnpx
+      args:
+        - "-y"
+        - "mcp-remote@latest"
+        - "https://coolify.akbal.dev/mcp"
+        - "--header"
+        - "Authorization:${COOLIFY_MCP_AUTH_HEADER}"
+    - name: chrome-devtools
+      registry: false
+      transport: stdio
+      command: pnpx
+      args:
+        - "chrome-devtools-mcp@latest"
+        - "--autoConnect"
+    - name: lighthouse
+      registry: false
+      transport: stdio
+      command: pnpx
+      args:
+        - "-y"
+        - "@danielsogl/lighthouse-mcp@latest"
+includes: auto
+scripts: {}

@@ -1,0 +1,3 @@
+# Files in this package that Stow should not link into $HOME
+README
+.stow-local-ignore

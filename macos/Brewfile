@@ -1,0 +1,26 @@
+# macOS bootstrap packages — declarative installs via `brew bundle`
+# Run: brew bundle install --file=macos/Brewfile
+
+tap "microsoft/apm"
+
+# Dotfiles + agent config
+brew "stow"
+brew "apm"
+
+# Shell + runtimes
+brew "fzf"
+brew "mise"
+brew "opencode"
+
+# General CLI utilities
+brew "gh"
+brew "jq"
+brew "ripgrep"
+
+# AI editors (APM targets)
+cask "cursor"
+cask "opencode-desktop"
+cask "codex-app"
+
+# Terminal
+cask "iterm2"

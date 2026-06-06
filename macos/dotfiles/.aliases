@@ -1,0 +1,4 @@
+# Shell aliases (sourced from .zshrc)
+
+# Agent MCP config — see macos/agent/README.md
+alias agent-sync='cd "$HOME/Developer/GitHub/AlejandroAkbal/dotfiles/macos/agent" && source "$HOME/.config/agent-secrets.env" && apm install --root ~ && apm compile -t codex,opencode --root ~'
