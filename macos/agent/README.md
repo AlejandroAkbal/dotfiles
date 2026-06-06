@@ -37,8 +37,7 @@ Uses [mcp-gsc](https://github.com/AminForou/mcp-gsc) via `uvx mcp-search-console
 
 1. In [Google Cloud Console](https://console.cloud.google.com/): enable **Search Console API**, create an **OAuth client ID** (Desktop app), download the JSON.
 2. Save it as `~/.config/gsc/client_secrets.json`.
-3. Add `GSC_OAUTH_CLIENT_SECRETS_FILE` to `~/.config/agent-secrets.env` (see `secrets.env.example`).
-4. Run `agent-sync`, then reload MCP in Cursor.
+3. Run `agent-sync`, then reload MCP in Cursor (`Cmd+Q` and reopen).
 5. On first use, a browser window opens for Google sign-in; the token is cached after that.
 
 ## Add an MCP server
