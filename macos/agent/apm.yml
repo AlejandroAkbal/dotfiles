@@ -57,12 +57,10 @@ dependencies:
       url: https://matomo.akbal.dev/index.php?module=API&method=McpServer.mcp&format=mcp
       headers:
         Authorization: "Bearer ${MATOMO_API_TOKEN}"
-    - name: gsc
+    - name: google-search-console
       registry: false
       transport: stdio
-      command: /opt/homebrew/bin/uvx
-      args:
-        - mcp-search-console
+      command: /Users/alejandro/.local/bin/mcp-search-console
       env:
         GSC_OAUTH_CLIENT_SECRETS_FILE: "/Users/alejandro/.config/gsc/client_secrets.json"
 includes: auto

@@ -163,6 +163,22 @@ check_secrets() {
   log "  chmod 600 $SECRETS_FILE"
 }
 
+ensure_gsc_mcp_tool() {
+  if [[ "$SKIP_AGENT" == true ]]; then
+    return 0
+  fi
+  if ! command -v uv &>/dev/null; then
+    log "uv not found — skipping GSC MCP tool install"
+    return 0
+  fi
+  if [[ -x "$HOME/.local/bin/mcp-search-console" ]]; then
+    log "GSC MCP tool: already installed"
+    return 0
+  fi
+  log "Installing mcp-search-console (uv tool)..."
+  run uv tool install mcp-search-console
+}
+
 run_agent_sync() {
   if [[ "$SKIP_AGENT" == true ]]; then
     log "Skipping agent-sync (--skip-agent)"
@@ -200,6 +216,7 @@ main() {
   stow_dotfiles
   set_gui_env
   check_secrets
+  ensure_gsc_mcp_tool
   run_agent_sync
   log "Done."
 }
