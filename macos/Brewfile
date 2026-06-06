@@ -16,6 +16,7 @@ brew "opencode"
 brew "gh"
 brew "jq"
 brew "ripgrep"
+brew "uv"
 
 # AI editors (APM targets)
 cask "cursor"

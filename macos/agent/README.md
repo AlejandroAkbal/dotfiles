@@ -2,7 +2,7 @@
 
 Shared MCP servers and rules for **Cursor**, **OpenCode**, and **Codex**.
 
-Managed MCP servers: `context7`, `n8n-mcp`, `sentry`, `coolify`, `chrome-devtools`, `lighthouse`, `matomo`.
+Managed MCP servers: `context7`, `n8n-mcp`, `sentry`, `coolify`, `chrome-devtools`, `lighthouse`, `matomo`, `gsc`.
 
 ## Setup
 
@@ -30,6 +30,16 @@ OpenCode plugins and provider settings stay in `~/.config/opencode/opencode.json
 4. Run `agent-sync`.
 
 See [Matomo's Claude Code integration guide](https://matomo.org/faq/integrate-the-mcp-server-with-claude-code/).
+
+## Google Search Console MCP (`gsc`)
+
+Uses [mcp-gsc](https://github.com/AminForou/mcp-gsc) via `uvx mcp-search-console` (requires `uv` from Brewfile).
+
+1. In [Google Cloud Console](https://console.cloud.google.com/): enable **Search Console API**, create an **OAuth client ID** (Desktop app), download the JSON.
+2. Save it as `~/.config/gsc/client_secrets.json`.
+3. Add `GSC_OAUTH_CLIENT_SECRETS_FILE` to `~/.config/agent-secrets.env` (see `secrets.env.example`).
+4. Run `agent-sync`, then reload MCP in Cursor.
+5. On first use, a browser window opens for Google sign-in; the token is cached after that.
 
 ## Add an MCP server
 
