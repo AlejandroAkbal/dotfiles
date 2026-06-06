@@ -2,7 +2,7 @@
 
 Shared MCP servers and rules for **Cursor**, **OpenCode**, and **Codex**.
 
-Managed MCP servers: `context7`, `n8n-mcp`, `sentry`, `coolify`, `chrome-devtools`, `lighthouse`, `matomo`, `google-search-console`.
+Managed MCP servers: `context7`, `n8n-mcp`, `sentry`, `coolify`, `chrome-devtools`, `lighthouse`, `matomo`, `gsc`.
 
 ## Setup
 
@@ -31,7 +31,7 @@ OpenCode plugins and provider settings stay in `~/.config/opencode/opencode.json
 
 See [Matomo's Claude Code integration guide](https://matomo.org/faq/integrate-the-mcp-server-with-claude-code/).
 
-## Google Search Console MCP (`google-search-console`)
+## Google Search Console MCP (`gsc`)
 
 Uses [mcp-gsc](https://github.com/AminForou/mcp-gsc) via `uv tool install mcp-search-console` (requires `uv` from Brewfile). Installed to `~/.local/bin/mcp-search-console` for fast Cursor startup (avoids `uvx` cold-download timeouts).
 

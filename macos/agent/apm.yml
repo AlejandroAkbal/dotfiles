@@ -57,7 +57,7 @@ dependencies:
       url: https://matomo.akbal.dev/index.php?module=API&method=McpServer.mcp&format=mcp
       headers:
         Authorization: "Bearer ${MATOMO_API_TOKEN}"
-    - name: google-search-console
+    - name: gsc
       registry: false
       transport: stdio
       command: /Users/alejandro/.local/bin/mcp-search-console
