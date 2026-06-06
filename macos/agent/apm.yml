@@ -60,7 +60,9 @@ dependencies:
     - name: gsc
       registry: false
       transport: stdio
-      command: /Users/alejandro/.local/bin/mcp-search-console
+      command: /opt/homebrew/bin/uvx
+      args:
+        - mcp-search-console
       env:
         GSC_OAUTH_CLIENT_SECRETS_FILE: "/Users/alejandro/.config/gsc/client_secrets.json"
 includes: auto

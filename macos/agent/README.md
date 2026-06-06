@@ -33,7 +33,7 @@ See [Matomo's Claude Code integration guide](https://matomo.org/faq/integrate-th
 
 ## Google Search Console MCP (`gsc`)
 
-Uses [mcp-gsc](https://github.com/AminForou/mcp-gsc) via `uv tool install mcp-search-console` (requires `uv` from Brewfile). Installed to `~/.local/bin/mcp-search-console` for fast Cursor startup (avoids `uvx` cold-download timeouts).
+Uses [mcp-gsc](https://github.com/AminForou/mcp-gsc) via `uvx mcp-search-console` (requires `uv` from Brewfile).
 
 1. In [Google Cloud Console](https://console.cloud.google.com/): enable **Search Console API**, create an **OAuth client ID** (Desktop app), download the JSON.
 2. Save it as `~/.config/gsc/client_secrets.json`.
