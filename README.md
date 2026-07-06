@@ -17,8 +17,9 @@ make mac
 1. Ensures Homebrew is installed
 2. Applies [`macos/Brewfile`](macos/Brewfile) (stow, apm, fzf, mise, opencode, uv, gh, jq, ripgrep, Cursor, OpenCode, Codex, iTerm2)
 3. Links shell configs via GNU Stow (`~/.zshrc`, `~/.zshenv`, `~/.aliases`)
-4. Sets `OPENCODE_CONFIG` for GUI apps via `launchctl setenv`
-5. Runs APM `agent-sync` if secrets are configured
+4. Runs APM `agent-sync` if secrets are configured
+
+Shell env (`OPENCODE_CONFIG`, MCP secrets) is set in stowed `~/.zshenv`, which sources `~/.config/agent-secrets.env`.
 
 ### Agent secrets (required for authenticated MCP)
 

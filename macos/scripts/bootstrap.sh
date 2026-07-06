@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Idempotent macOS bootstrap: Homebrew, dotfiles (Stow), GUI env, APM agent config.
+# Idempotent macOS bootstrap: Homebrew, dotfiles (Stow), APM agent config.
 
 set -euo pipefail
 
@@ -137,16 +137,6 @@ stow_dotfiles() {
   fi
 }
 
-set_gui_env() {
-  local opencode_config="$HOME/opencode.json"
-  log "Setting GUI session env: OPENCODE_CONFIG=$opencode_config"
-  if [[ "$DRY_RUN" == true ]]; then
-    printf '[dry-run] launchctl setenv OPENCODE_CONFIG %s\n' "$opencode_config"
-  else
-    launchctl setenv OPENCODE_CONFIG "$opencode_config"
-  fi
-}
-
 check_secrets() {
   if [[ "$SKIP_AGENT" == true ]]; then
     log "Skipping secrets check (--skip-agent)"
@@ -178,7 +168,7 @@ run_agent_sync() {
   fi
   log "Running agent-sync..."
   if [[ "$DRY_RUN" == true ]]; then
-    printf '[dry-run] cd %s && source %s && apm install --root ~ && apm compile -t codex,opencode --root ~\n' \
+    printf '[dry-run] cd %s && source %s && apm install --root ~ --target cursor,opencode,codex && apm compile -t codex,opencode --root ~\n' \
       "$AGENT_DIR" "$SECRETS_FILE"
     return 0
   fi
@@ -198,7 +188,6 @@ main() {
   ensure_homebrew
   run_brewfile
   stow_dotfiles
-  set_gui_env
   check_secrets
   run_agent_sync
   log "Done."

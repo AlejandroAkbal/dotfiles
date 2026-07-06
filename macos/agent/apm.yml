@@ -1,5 +1,5 @@
 name: agent-config
-version: 1.0.0
+version: 1.0.1
 description: Machine-wide MCP and rules for Cursor, OpenCode, and Codex
 author: Alejandro Akbal
 targets:
@@ -13,12 +13,12 @@ dependencies:
       registry: false
       transport: http
       url: https://mcp.context7.com/mcp
-    - name: n8n-mcp
-      registry: false
-      transport: http
-      url: https://n8n.akbal.dev/mcp-server/http
-      headers:
-        Authorization: "Bearer ${N8N_MCP_TOKEN}"
+    # - name: n8n-mcp
+    #   registry: false
+    #   transport: http
+    #   url: https://n8n.akbal.dev/mcp-server/http
+    #   headers:
+    #     Authorization: "Bearer ${N8N_MCP_TOKEN}"
     - name: sentry
       registry: false
       transport: stdio
@@ -27,16 +27,12 @@ dependencies:
         - "-y"
         - "mcp-remote@latest"
         - "https://mcp.sentry.dev/mcp"
-    - name: coolify
-      registry: false
-      transport: stdio
-      command: pnpx
-      args:
-        - "-y"
-        - "mcp-remote@latest"
-        - "https://coolify.akbal.dev/mcp"
-        - "--header"
-        - "Authorization:${COOLIFY_MCP_AUTH_HEADER}"
+    # - name: coolify
+    #   registry: false
+    #   transport: http
+    #   url: https://coolify.akbal.dev/mcp
+    #   headers:
+    #     Authorization: "${COOLIFY_MCP_AUTH_HEADER}"
     - name: chrome-devtools
       registry: false
       transport: stdio
@@ -51,12 +47,12 @@ dependencies:
       args:
         - "-y"
         - "@danielsogl/lighthouse-mcp@latest"
-    - name: matomo
-      registry: false
-      transport: http
-      url: https://matomo.akbal.dev/index.php?module=API&method=McpServer.mcp&format=mcp
-      headers:
-        Authorization: "Bearer ${MATOMO_API_TOKEN}"
+    # - name: matomo
+    #   registry: false
+    #   transport: http
+    #   url: https://matomo.akbal.dev/index.php?module=API&method=McpServer.mcp&format=mcp
+    #   headers:
+    #     Authorization: "Bearer ${MATOMO_API_TOKEN}"
     - name: gsc
       registry: false
       transport: stdio
@@ -65,5 +61,29 @@ dependencies:
         - mcp-search-console
       env:
         GSC_OAUTH_CLIENT_SECRETS_FILE: "/Users/alejandro/.config/gsc/client_secrets.json"
+    - name: brave-search
+      registry: false
+      transport: stdio
+      command: pnpx
+      args:
+        - "-y"
+        - "dotenv-cli"
+        - "-e"
+        - "/Users/alejandro/.config/agent-secrets.env"
+        - "--"
+        - "pnpx"
+        - "-y"
+        - "@brave/brave-search-mcp-server"
+        - "--transport"
+        - "stdio"
+    - name: maestro
+      registry: false
+      transport: stdio
+      command: /opt/homebrew/bin/maestro
+      args:
+        - mcp
+      env:
+        JAVA_HOME: "/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home"
+        MAESTRO_CLI_NO_ANALYTICS: "1"
 includes: auto
 scripts: {}

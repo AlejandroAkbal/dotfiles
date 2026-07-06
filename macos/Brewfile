@@ -17,6 +17,8 @@ brew "gh"
 brew "jq"
 brew "ripgrep"
 brew "uv"
+brew "maestro"
+brew "openjdk"
 
 # AI editors (APM targets)
 cask "cursor"

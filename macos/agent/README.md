@@ -2,13 +2,15 @@
 
 Shared MCP servers and rules for **Cursor**, **OpenCode**, and **Codex**.
 
-Managed MCP servers: `context7`, `n8n-mcp`, `sentry`, `coolify`, `chrome-devtools`, `lighthouse`, `matomo`, `gsc`.
+Managed MCP servers: `context7`, `sentry`, `chrome-devtools`, `lighthouse`, `gsc`, `brave-search`, `maestro` (plus optional `n8n-mcp`, `coolify`, `matomo` when uncommented in `apm.yml`).
 
 ## Setup
 
 1. Copy `secrets.env.example` to `~/.config/agent-secrets.env` and fill in values (`chmod 600`).
-2. Bootstrap dotfiles: `make mac` from repo root (Stow links shell configs + `launchctl setenv` for GUI OpenCode).
+2. Bootstrap dotfiles: `make mac` from repo root (Stow links `~/.zshenv`, which exports `OPENCODE_CONFIG` and sources MCP secrets).
 3. Run `agent-sync` when editing `apm.yml` (also runs automatically at end of `make mac`).
+
+`agent-sync` sources `~/.config/agent-secrets.env` before `apm install`, so HTTP MCP auth (`n8n-mcp`, `coolify`, `matomo`) is written into each editor config at install time. `brave-search` loads `BRAVE_API_KEY` from that same secrets file at server start via `dotenv-cli` (Cursor does not resolve `${env:VAR}` in stdio `env` blocks).
 
 ## What gets deployed
 
@@ -39,6 +41,22 @@ Uses [mcp-gsc](https://github.com/AminForou/mcp-gsc) via `uvx mcp-search-console
 2. Save it as `~/.config/gsc/client_secrets.json`.
 3. Run `agent-sync`, then reload MCP in Cursor (`Cmd+Q` and reopen).
 5. On first use, a browser window opens for Google sign-in; the token is cached after that.
+
+## Brave Search MCP (`brave-search`)
+
+Uses Brave's official [`@brave/brave-search-mcp-server`](https://github.com/brave/brave-search-mcp-server) package.
+
+1. Get an API key from [Brave Search API](https://brave.com/search/api/).
+2. Add `BRAVE_API_KEY` to `~/.config/agent-secrets.env`.
+3. Run `agent-sync`, then reload MCP in Cursor.
+
+## Maestro MCP (`maestro`)
+
+Mobile UI testing via [Maestro](https://maestro.mobile.dev/) — same config as Verso's former project-level `.cursor/mcp.json`, deployed globally.
+
+Requires `maestro` and `openjdk` from Brewfile. No secrets. Run `agent-sync` after install.
+
+Works in Cursor and OpenCode via APM. Codex uses the same `apm.yml` entry; if a new MCP does not appear in `codex mcp list`, re-run `agent-sync` or add it with `codex mcp add` using the same command/env from `apm.yml`.
 
 ## Add an MCP server
 
