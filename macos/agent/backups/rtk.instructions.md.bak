@@ -1,0 +1,136 @@
+---
+description: RTK (Rust Token Killer) — always prefix shell commands with rtk for compact output
+---
+
+# RTK (Rust Token Killer) - Token-Optimized Commands
+
+## Golden Rule
+
+**Always prefix commands with `rtk`**. If RTK has a dedicated filter, it uses it. If not, it passes through unchanged. This means RTK is always safe to use.
+
+**Important**: Even in command chains with `&&`, use `rtk`:
+
+```bash
+# Wrong
+git add . && git commit -m "msg" && git push
+
+# Correct
+rtk git add . && rtk git commit -m "msg" && rtk git push
+```
+
+## RTK Commands by Workflow
+
+### Build & Compile (80-90% savings)
+
+```bash
+rtk cargo build
+rtk cargo check
+rtk cargo clippy
+rtk tsc
+rtk lint
+rtk prettier --check
+rtk next build
+```
+
+### Test (60-99% savings)
+
+```bash
+rtk cargo test
+rtk go test
+rtk jest
+rtk vitest
+rtk playwright test
+rtk pytest
+rtk rake test
+rtk rspec
+rtk test <cmd>
+```
+
+### Git (59-80% savings)
+
+```bash
+rtk git status
+rtk git log
+rtk git diff
+rtk git show
+rtk git add
+rtk git commit
+rtk git push
+rtk git pull
+rtk git branch
+rtk git fetch
+rtk git stash
+rtk git worktree
+```
+
+Git passthrough works for ALL subcommands, even those not explicitly listed.
+
+### GitHub (26-87% savings)
+
+```bash
+rtk gh pr view <num>
+rtk gh pr checks
+rtk gh run list
+rtk gh issue list
+rtk gh api
+```
+
+### JavaScript/TypeScript Tooling (70-90% savings)
+
+```bash
+rtk pnpm list
+rtk pnpm outdated
+rtk pnpm install
+rtk npm run <script>
+rtk npx <cmd>
+rtk prisma
+```
+
+### Files & Search (60-75% savings)
+
+```bash
+rtk ls <path>
+rtk read <file>
+rtk grep <pattern>
+rtk find <pattern>
+```
+
+### Analysis & Debug (70-90% savings)
+
+```bash
+rtk err <cmd>
+rtk log <file>
+rtk json <file>
+rtk deps
+rtk env
+rtk summary <cmd>
+rtk diff
+```
+
+### Infrastructure (85% savings)
+
+```bash
+rtk docker ps
+rtk docker images
+rtk docker logs <c>
+rtk kubectl get
+rtk kubectl logs
+```
+
+### Network (65-70% savings)
+
+```bash
+rtk curl <url>
+rtk wget <url>
+```
+
+### Meta Commands
+
+```bash
+rtk gain
+rtk gain --history
+rtk discover
+rtk proxy <cmd>
+```
+
+Overall average: **60-90% token reduction** on common development operations.

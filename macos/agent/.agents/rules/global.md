@@ -1,7 +1,3 @@
----
-description: Global agent workflow guidance shared across Cursor, OpenCode, Codex, Claude Code, and Antigravity
----
-
 ## Package management
 
 - Prefer **declarative package managers** over one-off install scripts (`curl | bash`, `irm`, vendor installers).

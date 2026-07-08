@@ -1,18 +1,50 @@
 name: agent-config
-version: 1.0.1
-description: Machine-wide MCP and rules for Cursor, OpenCode, and Codex
+version: 1.0.3
+description: Machine-wide MCP and rules for Cursor, OpenCode, Codex, Claude 
+  Code, and Antigravity
 author: Alejandro Akbal
 targets:
   - cursor
   - opencode
   - codex
+  - claude
+  - antigravity
 dependencies:
-  apm: []
+  apm:
+    - shadcn/improve
+    - Leonxlnx/taste-skill
+    - git: uditgoenka/autoresearch
+      path: .agents/skills/autoresearch
   mcp:
     - name: context7
       registry: false
       transport: http
       url: https://mcp.context7.com/mcp
+    # Replaced by 9router-mcp. Keep commented for easy rollback.
+    # - name: exa
+    #   registry: false
+    #   transport: stdio
+    #   command: pnpx
+    #   args:
+    #     - "-y"
+    #     - "dotenv-cli"
+    #     - "-e"
+    #     - "/Users/alejandro/.config/agent-secrets.env"
+    #     - "--"
+    #     - "pnpx"
+    #     - "-y"
+    #     - "exa-mcp-server"
+    - name: 9router-search
+      registry: false
+      transport: stdio
+      command: pnpx
+      args:
+        - "-y"
+        - "9router-mcp@latest"
+      env:
+        ROUTER_BASE_URL: "http://127.0.0.1:20128/v1"
+        # 9router-mcp currently requires an Authorization header even on local setups.
+        ROUTER_API_KEY: "sk_9router"
     # - name: n8n-mcp
     #   registry: false
     #   transport: http
@@ -53,6 +85,7 @@ dependencies:
     #   url: https://matomo.akbal.dev/index.php?module=API&method=McpServer.mcp&format=mcp
     #   headers:
     #     Authorization: "Bearer ${MATOMO_API_TOKEN}"
+    # Google Search Console
     - name: gsc
       registry: false
       transport: stdio
@@ -61,21 +94,22 @@ dependencies:
         - mcp-search-console
       env:
         GSC_OAUTH_CLIENT_SECRETS_FILE: "/Users/alejandro/.config/gsc/client_secrets.json"
-    - name: brave-search
-      registry: false
-      transport: stdio
-      command: pnpx
-      args:
-        - "-y"
-        - "dotenv-cli"
-        - "-e"
-        - "/Users/alejandro/.config/agent-secrets.env"
-        - "--"
-        - "pnpx"
-        - "-y"
-        - "@brave/brave-search-mcp-server"
-        - "--transport"
-        - "stdio"
+    # Replaced by 9router-mcp. Keep commented for easy rollback.
+    # - name: brave-search
+    #   registry: false
+    #   transport: stdio
+    #   command: pnpx
+    #   args:
+    #     - "-y"
+    #     - "dotenv-cli"
+    #     - "-e"
+    #     - "/Users/alejandro/.config/agent-secrets.env"
+    #     - "--"
+    #     - "pnpx"
+    #     - "-y"
+    #     - "@brave/brave-search-mcp-server"
+    #     - "--transport"
+    #     - "stdio"
     - name: maestro
       registry: false
       transport: stdio

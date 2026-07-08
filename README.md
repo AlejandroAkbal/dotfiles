@@ -15,7 +15,7 @@ make mac
 `make mac` runs [`macos/scripts/bootstrap.sh`](macos/scripts/bootstrap.sh), which:
 
 1. Ensures Homebrew is installed
-2. Applies [`macos/Brewfile`](macos/Brewfile) (stow, apm, fzf, mise, opencode, uv, gh, jq, ripgrep, Cursor, OpenCode, Codex, iTerm2)
+2. Applies [`macos/Brewfile`](macos/Brewfile) (stow, apm, rtk, fzf, mise, opencode, uv, gh, jq, ripgrep, Cursor, OpenCode, Codex, Claude Code, iTerm2)
 3. Links shell configs via GNU Stow (`~/.zshrc`, `~/.zshenv`, `~/.aliases`)
 4. Runs APM `agent-sync` if secrets are configured
 

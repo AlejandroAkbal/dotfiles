@@ -6,20 +6,13 @@
 source <(fzf --zsh)
 eval "$(mise activate zsh)"
 
-# Added by Windsurf
-export PATH="/Users/alejandro/.codeium/windsurf/bin:$PATH"
-
 # pnpm
 export PNPM_HOME="/Users/alejandro/Library/pnpm"
 case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
 esac
 # pnpm end
-
-# Added by LM Studio CLI (lms)
-export PATH="$PATH:/Users/alejandro/.lmstudio/bin"
-# End of LM Studio CLI section
 
 # add CloudyPad CLI PATH
 export PATH=$PATH:/Users/alejandro/.cloudypad/bin

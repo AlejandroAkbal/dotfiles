@@ -168,16 +168,19 @@ run_agent_sync() {
   fi
   log "Running agent-sync..."
   if [[ "$DRY_RUN" == true ]]; then
-    printf '[dry-run] cd %s && source %s && apm install --root ~ --target cursor,opencode,codex && apm compile -t codex,opencode --root ~\n' \
+    printf '[dry-run] cd %s && source %s && apm install --root ~ --target cursor,opencode,codex,claude,antigravity && apm install -g --target antigravity --runtime antigravity && apm compile -t codex,opencode,claude,antigravity --root ~\n' \
       "$AGENT_DIR" "$SECRETS_FILE"
     return 0
   fi
   # shellcheck disable=SC1090
   source "$SECRETS_FILE"
+  mkdir -p "$HOME/.apm"
+  ln -sfn "$AGENT_DIR/apm.yml" "$HOME/.apm/apm.yml"
   (
     cd "$AGENT_DIR"
-    apm install --root ~ --target cursor,opencode,codex
-    apm compile -t codex,opencode --root ~
+    apm install --root ~ --target cursor,opencode,codex,claude,antigravity
+    apm install -g --target antigravity --runtime antigravity
+    apm compile -t codex,opencode,claude,antigravity --root ~
   )
   log "agent-sync complete"
 }

@@ -17,6 +17,7 @@ brew "gh"
 brew "jq"
 brew "ripgrep"
 brew "uv"
+brew "rtk"
 brew "maestro"
 brew "openjdk"
 
@@ -24,6 +25,8 @@ brew "openjdk"
 cask "cursor"
 cask "opencode-desktop"
 cask "codex-app"
+cask "claude-code"
+cask "antigravity-cli"
 
 # Terminal
 cask "iterm2"

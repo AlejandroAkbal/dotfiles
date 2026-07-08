@@ -1,8 +1,8 @@
 # Machine-wide agent config (APM)
 
-Shared MCP servers and rules for **Cursor**, **OpenCode**, and **Codex**.
+Shared MCP servers and rules for **Cursor**, **OpenCode**, **Codex**, **Claude Code**, and **Antigravity**.
 
-Managed MCP servers: `context7`, `sentry`, `chrome-devtools`, `lighthouse`, `gsc`, `brave-search`, `maestro` (plus optional `n8n-mcp`, `coolify`, `matomo` when uncommented in `apm.yml`).
+Managed MCP servers: `context7`, `9router-search`, `sentry`, `chrome-devtools`, `lighthouse`, `gsc`, `maestro` (plus optional `exa`, `brave-search`, `n8n-mcp`, `coolify`, `matomo` when uncommented in `apm.yml`).
 
 ## Setup
 
@@ -10,7 +10,7 @@ Managed MCP servers: `context7`, `sentry`, `chrome-devtools`, `lighthouse`, `gsc
 2. Bootstrap dotfiles: `make mac` from repo root (Stow links `~/.zshenv`, which exports `OPENCODE_CONFIG` and sources MCP secrets).
 3. Run `agent-sync` when editing `apm.yml` (also runs automatically at end of `make mac`).
 
-`agent-sync` sources `~/.config/agent-secrets.env` before `apm install`, so HTTP MCP auth (`n8n-mcp`, `coolify`, `matomo`) is written into each editor config at install time. `brave-search` loads `BRAVE_API_KEY` from that same secrets file at server start via `dotenv-cli` (Cursor does not resolve `${env:VAR}` in stdio `env` blocks).
+`agent-sync` sources `~/.config/agent-secrets.env` before `apm install`, so HTTP MCP auth (`n8n-mcp`, `coolify`, `matomo`) is written into each editor config at install time. Some stdio MCPs may also need runtime env workarounds when clients do not resolve `${env:VAR}` consistently.
 
 ## What gets deployed
 
@@ -19,8 +19,14 @@ Managed MCP servers: `context7`, `sentry`, `chrome-devtools`, `lighthouse`, `gsc
 | MCP (Cursor) | `~/.cursor/mcp.json` |
 | MCP (Codex) | `~/.codex/config.toml` |
 | MCP (OpenCode) | `~/opencode.json` (via `OPENCODE_CONFIG` in linked `~/.zshenv`) |
-| Rules (Cursor) | `~/.cursor/rules/global.mdc` |
+| MCP (Claude Code) | `~/.mcp.json` |
+| MCP (Antigravity) | `~/.gemini/config/mcp_config.json` |
+| Rules (Cursor) | `~/.cursor/rules/*.mdc` |
+| Rules (Claude Code) | `~/.claude/rules/*.md` |
 | Rules (Codex/OpenCode) | `~/AGENTS.md` (via `apm compile`) |
+| Rules (Antigravity) | `~/.agents/rules/*.md` + `~/AGENTS.md` (via `apm compile`) |
+| Skills (cross-tool) | `~/.agents/skills/*` (Cursor, Codex, OpenCode, Antigravity) |
+| Skills (Claude Code) | `~/.claude/skills/*` |
 
 OpenCode plugins and provider settings stay in `~/.config/opencode/opencode.json`.
 
@@ -42,13 +48,25 @@ Uses [mcp-gsc](https://github.com/AminForou/mcp-gsc) via `uvx mcp-search-console
 3. Run `agent-sync`, then reload MCP in Cursor (`Cmd+Q` and reopen).
 5. On first use, a browser window opens for Google sign-in; the token is cached after that.
 
+## 9router MCP (`9router-search`)
+
+Search via [9router MCP](https://github.com/dipandhali2021/9router-mcp).
+
+For this machine, the MCP is configured directly in `apm.yml` to use the same local endpoint as OpenCode: `http://127.0.0.1:20128/v1`.
+
+No secrets file entry is required for the current setup. The MCP runs via `pnpx` with the base URL passed in the `env` block in `apm.yml`.
+
+Run `agent-sync`, then reload MCP in each editor.
+
+**Current limitation:** upstream `9router-mcp` hardcodes the search tool model to `openclaw-search`. It does not currently expose a config/env option to force `search-combo`, so that would require a local wrapper or fork.
+
+## Exa MCP (`exa`)
+
+Replaced by `9router-search` for now. The old config is still preserved as commented lines in `apm.yml` in case you want to roll back.
+
 ## Brave Search MCP (`brave-search`)
 
-Uses Brave's official [`@brave/brave-search-mcp-server`](https://github.com/brave/brave-search-mcp-server) package.
-
-1. Get an API key from [Brave Search API](https://brave.com/search/api/).
-2. Add `BRAVE_API_KEY` to `~/.config/agent-secrets.env`.
-3. Run `agent-sync`, then reload MCP in Cursor.
+Replaced by `9router-search` for now. The old config is still preserved as commented lines in `apm.yml` in case you want to roll back.
 
 ## Maestro MCP (`maestro`)
 
@@ -57,6 +75,46 @@ Mobile UI testing via [Maestro](https://maestro.mobile.dev/) — same config as 
 Requires `maestro` and `openjdk` from Brewfile. No secrets. Run `agent-sync` after install.
 
 Works in Cursor and OpenCode via APM. Codex uses the same `apm.yml` entry; if a new MCP does not appear in `codex mcp list`, re-run `agent-sync` or add it with `codex mcp add` using the same command/env from `apm.yml`.
+
+## Skills
+
+APM deploys [Agent Skills](https://agentskills.io) to every target in `apm.yml`. Add a GitHub package under `dependencies.apm`:
+
+```yaml
+dependencies:
+  apm:
+    - shadcn/improve
+    - Leonxlnx/taste-skill
+    - git: uditgoenka/autoresearch
+      path: .agents/skills/autoresearch
+```
+
+Then run `agent-sync`. Skills land in `~/.agents/skills/` (shared by Cursor, Codex, OpenCode, Antigravity) and `~/.claude/skills/` (Claude Code).
+
+### improve (`shadcn/improve`)
+
+Codebase audit skill — writes implementation plans in `plans/` for cheaper models to execute. Invoke with `/improve` (or `/improve quick`, `/improve security`, etc.). See [shadcn/improve](https://github.com/shadcn/improve).
+
+### taste-skill (`Leonxlnx/taste-skill`)
+
+Anti-slop frontend design skills (minimalist, brutalist, redesign, image-to-code, brandkit, and more). See [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill).
+
+### autoresearch (`uditgoenka/autoresearch`)
+
+Autonomous iteration loop — modify, verify, keep/discard against a metric. Invoke with `/autoresearch` (plus subcommands like `plan`, `debug`, `security`, `ship`). Installed via path dependency (the repo root is a hybrid plugin; the skill lives under `.agents/skills/autoresearch`). See [uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch).
+
+## Antigravity
+
+APM's **`antigravity`** target deploys rules to `~/.agents/rules/` and MCP to `~/.gemini/config/mcp_config.json`. Requires:
+
+- **APM 0.24.0+** (Homebrew may lag; upgrade manually until the formula catches up)
+- **Antigravity CLI** (`agy`) — `brew install --cask antigravity-cli` (in `macos/Brewfile`)
+
+`agent-sync` runs two installs: project-scope for Cursor/Codex/etc., then `apm install -g --target antigravity --runtime antigravity` for global Antigravity MCP (APM 0.24.0 does not auto-detect `antigravity` in its runtime probe).
+
+Reload MCP in Antigravity after `agent-sync` (IDE: MCP Servers panel; CLI: `/mcp`).
+
+**Note:** HTTP servers (e.g. `context7`) are written with `httpUrl` (Gemini schema). If Antigravity rejects them, rename to `serverUrl` in `mcp_config.json` until APM maps the field for Antigravity.
 
 ## Add an MCP server
 
