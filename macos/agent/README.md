@@ -2,7 +2,9 @@
 
 Shared MCP servers and rules for **Cursor**, **OpenCode**, **Codex**, **Claude Code**, and **Antigravity**.
 
-Managed MCP servers: `context7`, `9router-search`, `sentry`, `chrome-devtools`, `lighthouse`, `gsc`, `maestro` (plus optional `exa`, `brave-search`, `n8n-mcp`, `coolify`, `matomo` when uncommented in `apm.yml`).
+**Active target:** OpenCode only. Other editors are disabled in `apm.yml` and `agent-sync` but kept commented for easy rollback.
+
+Managed MCP servers: `context7`, `9router-search`, `n8n-mcp`, `sentry`, `chrome-devtools`, `lighthouse`, `gsc`, `maestro` (plus optional `exa`, `brave-search`, `coolify`, `matomo` when uncommented in `apm.yml`).
 
 ## Setup
 
@@ -11,6 +13,21 @@ Managed MCP servers: `context7`, `9router-search`, `sentry`, `chrome-devtools`, 
 3. Run `agent-sync` when editing `apm.yml` (also runs automatically at end of `make mac`).
 
 `agent-sync` sources `~/.config/agent-secrets.env` before `apm install`, so HTTP MCP auth (`n8n-mcp`, `coolify`, `matomo`) is written into each editor config at install time. Some stdio MCPs may also need runtime env workarounds when clients do not resolve `${env:VAR}` consistently.
+
+## Re-enable other editors
+
+Uncomment the disabled targets in `apm.yml`:
+
+```yaml
+targets:
+  - opencode
+  # - cursor
+  # - codex
+  # - claude
+  # - antigravity
+```
+
+Then swap the commented `agent-sync` alias in `macos/dotfiles/.aliases` (and the matching block in `macos/scripts/bootstrap.sh`) to restore the full multi-editor install. Run `agent-sync`.
 
 ## What gets deployed
 
@@ -30,12 +47,22 @@ Managed MCP servers: `context7`, `9router-search`, `sentry`, `chrome-devtools`, 
 
 OpenCode plugins and provider settings stay in `~/.config/opencode/opencode.json`.
 
+## n8n MCP (`n8n-mcp`)
+
+Official n8n MCP server at `https://n8n.akbal.dev/mcp-server/http`.
+
+1. Create an MCP access token in n8n.
+2. Add `N8N_MCP_TOKEN` to `~/.config/agent-secrets.env`.
+3. Run `agent-sync`, then reload MCP in OpenCode.
+
+APM substitutes the token into `~/opencode.json` at install time (HTTP transport with `Authorization: Bearer …`).
+
 ## Matomo MCP
 
 1. Ensure the [MCP Server plugin](https://plugins.matomo.org/McpServer) is enabled on `matomo.akbal.dev`.
 2. Create an auth token: **Administration → Personal → Security → Auth Tokens**.
 3. Add `MATOMO_API_TOKEN` to `~/.config/agent-secrets.env`.
-4. Run `agent-sync`.
+4. Uncomment the `matomo` block in `apm.yml`, then run `agent-sync`.
 
 See [Matomo's Claude Code integration guide](https://matomo.org/faq/integrate-the-mcp-server-with-claude-code/).
 
@@ -45,15 +72,15 @@ Uses [mcp-gsc](https://github.com/AminForou/mcp-gsc) via `uvx mcp-search-console
 
 1. In [Google Cloud Console](https://console.cloud.google.com/): enable **Search Console API**, create an **OAuth client ID** (Desktop app), download the JSON.
 2. Save it as `~/.config/gsc/client_secrets.json`.
-3. Run `agent-sync`, then reload MCP in Cursor (`Cmd+Q` and reopen).
-5. On first use, a browser window opens for Google sign-in; the token is cached after that.
+3. Run `agent-sync`, then reload MCP in your editor.
+4. On first use, a browser window opens for Google sign-in; the token is cached after that.
 
 ## 9router MCP (`9router-search`)
 
 Search via [9router MCP](https://github.com/dipandhali2021/9router-mcp).
 
 1. Add `ROUTER_BASE_URL` and `ROUTER_API_KEY` to `~/.config/agent-secrets.env`.
-2. Run `agent-sync`, then reload MCP in each editor.
+2. Run `agent-sync`, then reload MCP in your editor.
 
 The MCP loads credentials at runtime via `dotenv-cli` (same pattern as the old `brave-search` setup).
 
@@ -115,7 +142,7 @@ APM's **`antigravity`** target deploys rules to `~/.agents/rules/` and MCP to `~
 - **APM 0.24.0+** (Homebrew may lag; upgrade manually until the formula catches up)
 - **Antigravity CLI** (`agy`) — `brew install --cask antigravity-cli` (in `macos/Brewfile`)
 
-`agent-sync` runs two installs: project-scope for Cursor/Codex/etc., then `apm install -g --target antigravity --runtime antigravity` for global Antigravity MCP (APM 0.24.0 does not auto-detect `antigravity` in its runtime probe).
+When enabled, `agent-sync` runs two installs: project-scope for Cursor/Codex/etc., then `apm install -g --target antigravity --runtime antigravity` for global Antigravity MCP (APM 0.24.0 does not auto-detect `antigravity` in its runtime probe).
 
 Reload MCP in Antigravity after `agent-sync` (IDE: MCP Servers panel; CLI: `/mcp`).
 

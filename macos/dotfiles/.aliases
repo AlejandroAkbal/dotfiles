@@ -1,4 +1,6 @@
 # Shell aliases (sourced from .zshrc)
 
 # Agent MCP config — see macos/agent/README.md
-alias agent-sync='cd "$HOME/Developer/GitHub/AlejandroAkbal/dotfiles/macos/agent" && source "$HOME/.config/agent-secrets.env" && apm install --root ~ --target cursor,opencode,codex,claude,antigravity && apm install -g --target antigravity --runtime antigravity && apm compile -t codex,opencode,claude,antigravity --root ~'
+# Active: OpenCode only. Full multi-editor command kept below for rollback.
+alias agent-sync='cd "$HOME/Developer/GitHub/AlejandroAkbal/dotfiles/macos/agent" && source "$HOME/.config/agent-secrets.env" && apm install --root ~ --target opencode && apm compile -t opencode --root ~'
+# alias agent-sync='cd "$HOME/Developer/GitHub/AlejandroAkbal/dotfiles/macos/agent" && source "$HOME/.config/agent-secrets.env" && apm install --root ~ --target cursor,opencode,codex,claude,antigravity && apm install -g --target antigravity --runtime antigravity && apm compile -t codex,opencode,claude,antigravity --root ~'

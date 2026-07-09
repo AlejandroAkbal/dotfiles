@@ -1,14 +1,14 @@
 name: agent-config
 version: 1.0.3
-description: Machine-wide MCP and rules for Cursor, OpenCode, Codex, Claude 
-  Code, and Antigravity
+description: Machine-wide MCP and rules for OpenCode (other targets disabled below)
 author: Alejandro Akbal
 targets:
-  - cursor
   - opencode
-  - codex
-  - claude
-  - antigravity
+  # Disabled — uncomment to re-enable multi-editor deploy:
+  # - cursor
+  # - codex
+  # - claude
+  # - antigravity
 dependencies:
   apm:
     - shadcn/improve
@@ -49,12 +49,12 @@ dependencies:
         - "pnpx"
         - "-y"
         - "9router-mcp@latest"
-    # - name: n8n-mcp
-    #   registry: false
-    #   transport: http
-    #   url: https://n8n.akbal.dev/mcp-server/http
-    #   headers:
-    #     Authorization: "Bearer ${N8N_MCP_TOKEN}"
+    - name: n8n-mcp
+      registry: false
+      transport: http
+      url: https://n8n.akbal.dev/mcp-server/http
+      headers:
+        Authorization: "Bearer ${N8N_MCP_TOKEN}"
     - name: sentry
       registry: false
       transport: stdio
