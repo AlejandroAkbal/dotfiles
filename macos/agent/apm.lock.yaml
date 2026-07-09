@@ -1,99 +1,23 @@
 lockfile_version: '1'
-generated_at: '2026-07-07T10:50:04.995218+00:00'
+generated_at: '2026-07-09T02:48:42.503741+00:00'
 apm_version: 0.24.0
 dependencies:
 - repo_url: Leonxlnx/taste-skill
-  name: taste-skill
+  name: design-taste-frontend
   host: github.com
   resolved_commit: b17742737e796305d829b3ad39eda3add0d79060
   version: 1.0.0
+  virtual_path: skills/taste-skill
+  is_virtual: true
+  package_type: claude_skill
+  content_hash: sha256:6d838b246d0e35d0b53f4f23f98ba7a1dd561937e64f7d0c7553b0928e376c3e
+- repo_url: addyosmani/agent-skills
+  name: agent-skills
+  host: github.com
+  resolved_commit: 0e63d8ea962ecac51637421d8fff63702fac766b
+  version: 1.0.0
   package_type: marketplace_plugin
-  deployed_files:
-  - .agents/skills/brandkit
-  - .agents/skills/brandkit/SKILL.md
-  - .agents/skills/brutalist-skill
-  - .agents/skills/brutalist-skill/SKILL.md
-  - .agents/skills/gpt-tasteskill
-  - .agents/skills/gpt-tasteskill/SKILL.md
-  - .agents/skills/image-to-code-skill
-  - .agents/skills/image-to-code-skill/SKILL.md
-  - .agents/skills/imagegen-frontend-mobile
-  - .agents/skills/imagegen-frontend-mobile/SKILL.md
-  - .agents/skills/imagegen-frontend-web
-  - .agents/skills/imagegen-frontend-web/SKILL.md
-  - .agents/skills/minimalist-skill
-  - .agents/skills/minimalist-skill/SKILL.md
-  - .agents/skills/output-skill
-  - .agents/skills/output-skill/SKILL.md
-  - .agents/skills/redesign-skill
-  - .agents/skills/redesign-skill/SKILL.md
-  - .agents/skills/soft-skill
-  - .agents/skills/soft-skill/SKILL.md
-  - .agents/skills/stitch-skill
-  - .agents/skills/stitch-skill/DESIGN.md
-  - .agents/skills/stitch-skill/SKILL.md
-  - .agents/skills/taste-skill
-  - .agents/skills/taste-skill-v1
-  - .agents/skills/taste-skill-v1/SKILL.md
-  - .agents/skills/taste-skill/SKILL.md
-  - .claude/skills/brandkit
-  - .claude/skills/brandkit/SKILL.md
-  - .claude/skills/brutalist-skill
-  - .claude/skills/brutalist-skill/SKILL.md
-  - .claude/skills/gpt-tasteskill
-  - .claude/skills/gpt-tasteskill/SKILL.md
-  - .claude/skills/image-to-code-skill
-  - .claude/skills/image-to-code-skill/SKILL.md
-  - .claude/skills/imagegen-frontend-mobile
-  - .claude/skills/imagegen-frontend-mobile/SKILL.md
-  - .claude/skills/imagegen-frontend-web
-  - .claude/skills/imagegen-frontend-web/SKILL.md
-  - .claude/skills/minimalist-skill
-  - .claude/skills/minimalist-skill/SKILL.md
-  - .claude/skills/output-skill
-  - .claude/skills/output-skill/SKILL.md
-  - .claude/skills/redesign-skill
-  - .claude/skills/redesign-skill/SKILL.md
-  - .claude/skills/soft-skill
-  - .claude/skills/soft-skill/SKILL.md
-  - .claude/skills/stitch-skill
-  - .claude/skills/stitch-skill/DESIGN.md
-  - .claude/skills/stitch-skill/SKILL.md
-  - .claude/skills/taste-skill
-  - .claude/skills/taste-skill-v1
-  - .claude/skills/taste-skill-v1/SKILL.md
-  - .claude/skills/taste-skill/SKILL.md
-  deployed_file_hashes:
-    .agents/skills/brandkit/SKILL.md: sha256:b0c4837e1bd140ca816ae54948754ddd2ac1e2a4d3619363777a80caf00b2ede
-    .agents/skills/brutalist-skill/SKILL.md: sha256:fffbaac8597f07679e9d87145533567658aedba3b5eca6f16a7075a333048caa
-    .agents/skills/gpt-tasteskill/SKILL.md: sha256:2e64c269953f2656c21bf5a0fa6b4568e82fe0c72b36e8f84758e090349966a5
-    .agents/skills/image-to-code-skill/SKILL.md: sha256:4c060a8064a8b13380bc2ef3d6e6a1d0b1e316aa093cd9807d0ce9e4eeb037fa
-    .agents/skills/imagegen-frontend-mobile/SKILL.md: sha256:8a33389979f3074fa0926678e266ad2eb9234624472254469fc1ad916b9caa24
-    .agents/skills/imagegen-frontend-web/SKILL.md: sha256:6b5c2256522fdba1e3313eafa3d743b960a7b13ec029d3e6586e04b23327c1f8
-    .agents/skills/minimalist-skill/SKILL.md: sha256:36bc7328f085405f43b476938e62460fa573bf7e984e949e072bcf014831a44c
-    .agents/skills/output-skill/SKILL.md: sha256:e5bf48b1ae561511439cf71672209a10a88cee0968cc925909ff861dfa0a96a7
-    .agents/skills/redesign-skill/SKILL.md: sha256:98ad3e5b051bfb71b2795f7e8a6aa0d32b51ee095606c098a4b2822ac07926c9
-    .agents/skills/soft-skill/SKILL.md: sha256:e1e32f5e2d420872c6c7332b53d5ff7721946766b78c4822b424c2d512c8fdbc
-    .agents/skills/stitch-skill/DESIGN.md: sha256:0ab6740c4ebb1966dbceddb823a66d4bf027e960efbd73faca56cbf8370ae2ad
-    .agents/skills/stitch-skill/SKILL.md: sha256:46bdb08fee2dded38b6ba0a051230a502d6ac6e4044afd47592cb40c256028b5
-    .agents/skills/taste-skill-v1/SKILL.md: sha256:033d45af1ed23832730642f95f40ab49db7fb5222848489a6c5656144bfc6dae
-    .agents/skills/taste-skill/SKILL.md: sha256:aa194351b246b8b4799099d4ed7b033d29eab6e6e3d58d8d2172978be7b3ec89
-    .claude/skills/brandkit/SKILL.md: sha256:b0c4837e1bd140ca816ae54948754ddd2ac1e2a4d3619363777a80caf00b2ede
-    .claude/skills/brutalist-skill/SKILL.md: sha256:fffbaac8597f07679e9d87145533567658aedba3b5eca6f16a7075a333048caa
-    .claude/skills/gpt-tasteskill/SKILL.md: sha256:2e64c269953f2656c21bf5a0fa6b4568e82fe0c72b36e8f84758e090349966a5
-    .claude/skills/image-to-code-skill/SKILL.md: sha256:4c060a8064a8b13380bc2ef3d6e6a1d0b1e316aa093cd9807d0ce9e4eeb037fa
-    .claude/skills/imagegen-frontend-mobile/SKILL.md: sha256:8a33389979f3074fa0926678e266ad2eb9234624472254469fc1ad916b9caa24
-    .claude/skills/imagegen-frontend-web/SKILL.md: sha256:6b5c2256522fdba1e3313eafa3d743b960a7b13ec029d3e6586e04b23327c1f8
-    .claude/skills/minimalist-skill/SKILL.md: sha256:36bc7328f085405f43b476938e62460fa573bf7e984e949e072bcf014831a44c
-    .claude/skills/output-skill/SKILL.md: sha256:e5bf48b1ae561511439cf71672209a10a88cee0968cc925909ff861dfa0a96a7
-    .claude/skills/redesign-skill/SKILL.md: sha256:98ad3e5b051bfb71b2795f7e8a6aa0d32b51ee095606c098a4b2822ac07926c9
-    .claude/skills/soft-skill/SKILL.md: sha256:e1e32f5e2d420872c6c7332b53d5ff7721946766b78c4822b424c2d512c8fdbc
-    .claude/skills/stitch-skill/DESIGN.md: sha256:0ab6740c4ebb1966dbceddb823a66d4bf027e960efbd73faca56cbf8370ae2ad
-    .claude/skills/stitch-skill/SKILL.md: sha256:46bdb08fee2dded38b6ba0a051230a502d6ac6e4044afd47592cb40c256028b5
-    .claude/skills/taste-skill-v1/SKILL.md: sha256:033d45af1ed23832730642f95f40ab49db7fb5222848489a6c5656144bfc6dae
-    .claude/skills/taste-skill/SKILL.md: sha256:aa194351b246b8b4799099d4ed7b033d29eab6e6e3d58d8d2172978be7b3ec89
-  content_hash: sha256:85053c1f895511b4ce1ba33d3211dfe5f45682383f0613069b8a805fc4ca9640
-  declared_license: MIT
+  content_hash: sha256:1cffcaea5e6c56b05b2d05892fc67807b9f57933da699d3dfc463b89c198de3c
 - repo_url: shadcn/improve
   name: improve
   host: github.com
@@ -122,6 +46,15 @@ dependencies:
     .claude/skills/improve/references/plan-template.md: sha256:7be76dd3c29442288fa7cee4432fc6e95c2fdbf748c9b356344bf647c5f8722e
   content_hash: sha256:4cd40e13503aac88bb60c202dc6a62977b290dbdc973d8cad0556ac46de6042d
   declared_license: MIT
+- repo_url: uditgoenka/autoresearch
+  name: autoresearch
+  host: github.com
+  resolved_commit: 870e9b8eca4fbe53cd6cb1247410373692e4aec3
+  version: unknown
+  virtual_path: .agents/skills/autoresearch
+  is_virtual: true
+  package_type: claude_skill
+  content_hash: sha256:2eb98afc0f8d76aaba93729cdd04a4c9bf5aeebfec98e78bc528804378e9a5a9
 local_deployed_files:
 - .agents/rules/global.md
 - .agents/rules/rtk.md

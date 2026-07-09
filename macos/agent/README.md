@@ -52,13 +52,12 @@ Uses [mcp-gsc](https://github.com/AminForou/mcp-gsc) via `uvx mcp-search-console
 
 Search via [9router MCP](https://github.com/dipandhali2021/9router-mcp).
 
-For this machine, the MCP is configured directly in `apm.yml` to use the same local endpoint as OpenCode: `http://127.0.0.1:20128/v1`.
+1. Add `ROUTER_BASE_URL` and `ROUTER_API_KEY` to `~/.config/agent-secrets.env`.
+2. Run `agent-sync`, then reload MCP in each editor.
 
-No secrets file entry is required for the current setup. The MCP runs via `pnpx` with the base URL passed in the `env` block in `apm.yml`.
+The MCP loads credentials at runtime via `dotenv-cli` (same pattern as the old `brave-search` setup).
 
-Run `agent-sync`, then reload MCP in each editor.
-
-**Current limitation:** upstream `9router-mcp` hardcodes the search tool model to `openclaw-search`. It does not currently expose a config/env option to force `search-combo`, so that would require a local wrapper or fork.
+**Current limitation:** upstream `9router-mcp` hardcodes the search tool model to `openclaw-search` and fetch to `openclaw-fetch`.
 
 ## Exa MCP (`exa`)
 
@@ -84,9 +83,11 @@ APM deploys [Agent Skills](https://agentskills.io) to every target in `apm.yml`.
 dependencies:
   apm:
     - shadcn/improve
-    - Leonxlnx/taste-skill
+    - git: Leonxlnx/taste-skill
+      path: skills/taste-skill
     - git: uditgoenka/autoresearch
       path: .agents/skills/autoresearch
+    - addyosmani/agent-skills
 ```
 
 Then run `agent-sync`. Skills land in `~/.agents/skills/` (shared by Cursor, Codex, OpenCode, Antigravity) and `~/.claude/skills/` (Claude Code).
@@ -97,11 +98,15 @@ Codebase audit skill — writes implementation plans in `plans/` for cheaper mod
 
 ### taste-skill (`Leonxlnx/taste-skill`)
 
-Anti-slop frontend design skills (minimalist, brutalist, redesign, image-to-code, brandkit, and more). See [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill).
+Anti-slop frontend design skill for landing pages, portfolios, and redesigns. Only `skills/taste-skill` is installed (not the full 13-skill pack). See [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill).
 
 ### autoresearch (`uditgoenka/autoresearch`)
 
 Autonomous iteration loop — modify, verify, keep/discard against a metric. Invoke with `/autoresearch` (plus subcommands like `plan`, `debug`, `security`, `ship`). Installed via path dependency (the repo root is a hybrid plugin; the skill lives under `.agents/skills/autoresearch`). See [uditgoenka/autoresearch](https://github.com/uditgoenka/autoresearch).
+
+### agent-skills (`addyosmani/agent-skills`)
+
+Production-grade engineering skills — spec, plan, build, test, review, ship workflows (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/ship`, and more). 24 skills including TDD, code review, security hardening, frontend UI, API design, and debugging. Installed from the repo root (hybrid plugin with `plugin.json`). See [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills).
 
 ## Antigravity
 

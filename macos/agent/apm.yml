@@ -12,9 +12,11 @@ targets:
 dependencies:
   apm:
     - shadcn/improve
-    - Leonxlnx/taste-skill
+    - git: Leonxlnx/taste-skill
+      path: skills/taste-skill
     - git: uditgoenka/autoresearch
       path: .agents/skills/autoresearch
+    - addyosmani/agent-skills
   mcp:
     - name: context7
       registry: false
@@ -40,11 +42,13 @@ dependencies:
       command: pnpx
       args:
         - "-y"
+        - "dotenv-cli"
+        - "-e"
+        - "/Users/alejandro/.config/agent-secrets.env"
+        - "--"
+        - "pnpx"
+        - "-y"
         - "9router-mcp@latest"
-      env:
-        ROUTER_BASE_URL: "http://127.0.0.1:20128/v1"
-        # 9router-mcp currently requires an Authorization header even on local setups.
-        ROUTER_API_KEY: "sk_9router"
     # - name: n8n-mcp
     #   registry: false
     #   transport: http
