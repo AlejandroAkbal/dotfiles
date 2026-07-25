@@ -30,3 +30,8 @@ cask "antigravity-cli"
 
 # Terminal
 cask "iterm2"
+
+cask "cleanshot"
+
+# Dynamic DNS Updater
+brew "ddclient"
