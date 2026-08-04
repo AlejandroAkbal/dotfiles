@@ -168,8 +168,8 @@ run_agent_sync() {
   fi
   log "Running agent-sync..."
   if [[ "$DRY_RUN" == true ]]; then
-    printf '[dry-run] cd %s && source %s && apm install --root ~ --target opencode && apm compile -t opencode --root ~\n' \
-      "$AGENT_DIR" "$SECRETS_FILE"
+    printf '[dry-run] cd %s && source %s && apm install --root ~ --target opencode && apm compile -t opencode --root ~ && mkdir -p %s && ln -sfn %s %s\n' \
+      "$AGENT_DIR" "$SECRETS_FILE" "$HOME/.config/opencode" "$HOME/AGENTS.md" "$HOME/.config/opencode/AGENTS.md"
     # Full multi-editor (disabled):
     # printf '[dry-run] cd %s && source %s && apm install --root ~ --target cursor,opencode,codex,claude,antigravity && apm install -g --target antigravity --runtime antigravity && apm compile -t codex,opencode,claude,antigravity --root ~\n' \
     #   "$AGENT_DIR" "$SECRETS_FILE"
@@ -183,6 +183,8 @@ run_agent_sync() {
     cd "$AGENT_DIR"
     apm install --root ~ --target opencode
     apm compile -t opencode --root ~
+    mkdir -p "$HOME/.config/opencode"
+    ln -sfn "$HOME/AGENTS.md" "$HOME/.config/opencode/AGENTS.md"
     # Full multi-editor (disabled):
     # apm install --root ~ --target cursor,opencode,codex,claude,antigravity
     # apm install -g --target antigravity --runtime antigravity

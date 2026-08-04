@@ -40,7 +40,7 @@ Then swap the commented `agent-sync` alias in `macos/dotfiles/.aliases` (and the
 | MCP (Antigravity) | `~/.gemini/config/mcp_config.json` |
 | Rules (Cursor) | `~/.cursor/rules/*.mdc` |
 | Rules (Claude Code) | `~/.claude/rules/*.md` |
-| Rules (Codex/OpenCode) | `~/AGENTS.md` (via `apm compile`) |
+| Rules (Codex/OpenCode) | `~/AGENTS.md` (via `apm compile`); OpenCode reads `~/.config/opencode/AGENTS.md`, symlinked by `agent-sync` |
 | Rules (Antigravity) | `~/.agents/rules/*.md` + `~/AGENTS.md` (via `apm compile`) |
 | Skills (cross-tool) | `~/.agents/skills/*` (Cursor, Codex, OpenCode, Antigravity) |
 | Skills (Claude Code) | `~/.claude/skills/*` |

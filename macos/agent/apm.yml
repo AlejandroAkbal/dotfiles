@@ -16,26 +16,31 @@ dependencies:
       path: skills/taste-skill
     - git: uditgoenka/autoresearch
       path: .agents/skills/autoresearch
+    - git: coderabbitai/skills
+      path: skills/code-review
+    - git: coderabbitai/skills
+      path: skills/autofix
+    # - git: browser-use/browser-use
+    #   path: skills/browser-use
     - addyosmani/agent-skills
   mcp:
     - name: context7
       registry: false
       transport: http
       url: https://mcp.context7.com/mcp
-    # Replaced by 9router-mcp. Keep commented for easy rollback.
-    # - name: exa
-    #   registry: false
-    #   transport: stdio
-    #   command: pnpx
-    #   args:
-    #     - "-y"
-    #     - "dotenv-cli"
-    #     - "-e"
-    #     - "/Users/alejandro/.config/agent-secrets.env"
-    #     - "--"
-    #     - "pnpx"
-    #     - "-y"
-    #     - "exa-mcp-server"
+    - name: exa
+      registry: false
+      transport: stdio
+      command: pnpx
+      args:
+        - "-y"
+        - "dotenv-cli"
+        - "-e"
+        - "/Users/alejandro/.config/agent-secrets.env"
+        - "--"
+        - "pnpx"
+        - "-y"
+        - "exa-mcp-server"
     - name: 9router-search
       registry: false
       transport: stdio
@@ -63,12 +68,12 @@ dependencies:
         - "-y"
         - "mcp-remote@latest"
         - "https://mcp.sentry.dev/mcp"
-    # - name: coolify
-    #   registry: false
-    #   transport: http
-    #   url: https://coolify.akbal.dev/mcp
-    #   headers:
-    #     Authorization: "${COOLIFY_MCP_AUTH_HEADER}"
+    - name: coolify
+      registry: false
+      transport: http
+      url: https://coolify.akbal.dev/mcp
+      headers:
+        Authorization: "${COOLIFY_MCP_AUTH_HEADER}"
     - name: chrome-devtools
       registry: false
       transport: stdio
@@ -83,14 +88,14 @@ dependencies:
       args:
         - "-y"
         - "@danielsogl/lighthouse-mcp@latest"
-    # - name: matomo
-    #   registry: false
-    #   transport: http
-    #   url: https://matomo.akbal.dev/index.php?module=API&method=McpServer.mcp&format=mcp
-    #   headers:
-    #     Authorization: "Bearer ${MATOMO_API_TOKEN}"
+    - name: matomo
+      registry: false
+      transport: http
+      url: https://matomo.akbal.dev/index.php?module=API&method=McpServer.mcp&format=mcp
+      headers:
+        Authorization: "Bearer ${MATOMO_API_TOKEN}"
     # Google Search Console
-    - name: gsc
+    - name: google_search_console
       registry: false
       transport: stdio
       command: /opt/homebrew/bin/uvx
@@ -98,22 +103,21 @@ dependencies:
         - mcp-search-console
       env:
         GSC_OAUTH_CLIENT_SECRETS_FILE: "/Users/alejandro/.config/gsc/client_secrets.json"
-    # Replaced by 9router-mcp. Keep commented for easy rollback.
-    # - name: brave-search
-    #   registry: false
-    #   transport: stdio
-    #   command: pnpx
-    #   args:
-    #     - "-y"
-    #     - "dotenv-cli"
-    #     - "-e"
-    #     - "/Users/alejandro/.config/agent-secrets.env"
-    #     - "--"
-    #     - "pnpx"
-    #     - "-y"
-    #     - "@brave/brave-search-mcp-server"
-    #     - "--transport"
-    #     - "stdio"
+    - name: brave-search
+      registry: false
+      transport: stdio
+      command: pnpx
+      args:
+        - "-y"
+        - "dotenv-cli"
+        - "-e"
+        - "/Users/alejandro/.config/agent-secrets.env"
+        - "--"
+        - "pnpx"
+        - "-y"
+        - "@brave/brave-search-mcp-server"
+        - "--transport"
+        - "stdio"
     - name: maestro
       registry: false
       transport: stdio
