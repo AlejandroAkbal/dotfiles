@@ -3,12 +3,12 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.alejandro.weekly-maintenance</string>
+  <string>com.alejandro.daily-softwareupdate</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/zsh</string>
-    <string>-lc</string>
-    <string>exec "$HOME/.local/bin/mac-mini-maintenance"</string>
+    <string>/usr/sbin/softwareupdate</string>
+    <string>--install</string>
+    <string>--all</string>
   </array>
   <key>StartCalendarInterval</key>
   <dict>
@@ -17,5 +17,9 @@
     <key>Minute</key>
     <integer>0</integer>
   </dict>
+  <key>StandardOutPath</key>
+  <string>/var/log/alejandro-softwareupdate.log</string>
+  <key>StandardErrorPath</key>
+  <string>/var/log/alejandro-softwareupdate.err.log</string>
 </dict>
 </plist>

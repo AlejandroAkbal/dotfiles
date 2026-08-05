@@ -26,6 +26,7 @@ mac-mini-check:
 	@test "$$(defaults read com.apple.dock persistent-others | tr -d '[:space:]')" = '()'
 	@pmset -g custom | grep -q 'autorestart *1'
 	@pmset -g custom | grep -Eq '^[[:space:]]*sleep[[:space:]]+0$$'
+	@pmset -g sched | grep -q 'restart at 3:00AM every day'
 	@networksetup -listallnetworkservices | sed '1d;/^\*/d' | while IFS= read -r service; do networksetup -getinfo "$$service" | grep -q '^IPv6: Off$$' || exit 1; done
 	@test "$$(defaults read com.apple.finder AppleShowAllExtensions)" = 1
 	@test "$$(defaults read com.apple.finder ShowPathbar)" = 1
@@ -33,5 +34,15 @@ mac-mini-check:
 	@plutil -lint "$$HOME/Library/LaunchAgents/com.alejandro.weekly-maintenance.plist" >/dev/null
 	@launchctl print "gui/$$(id -u)/com.alejandro.weekly-maintenance" >/dev/null
 	@"$$HOME/.local/bin/mac-mini-maintenance" --check >/dev/null
+	@plutil -lint macos/launchagents/com.alejandro.hermes-desktop.plist >/dev/null
+	@test "$$(defaults read com.apple.finder AppleShowAllExtensions)" = 1
+	@/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate | grep -q 'enabled'
+	@/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode | grep -q 'on'
+	@plutil -lint macos/launchdaemons/com.alejandro.daily-softwareupdate.plist >/dev/null
+	@test -f /Library/LaunchDaemons/com.alejandro.daily-softwareupdate.plist
+	@launchctl print system/com.alejandro.daily-softwareupdate >/dev/null
+	@test -f /etc/ssh/sshd_config.d/99-key-only.conf
+	@grep -qx 'PasswordAuthentication no' /etc/ssh/sshd_config.d/99-key-only.conf
+	@grep -qx 'AuthenticationMethods publickey' /etc/ssh/sshd_config.d/99-key-only.conf
 	@if command -v hermes >/dev/null && command -v rtk >/dev/null; then hermes plugins list --plain --no-bundled | grep -q 'enabled.*rtk-rewrite'; fi
-	@if command -v hermes >/dev/null; then test -L "$$HOME/Applications/Hermes.app"; plutil -lint "$$HOME/Library/LaunchAgents/com.alejandro.hermes-desktop.plist" >/dev/null; launchctl print "gui/$$(id -u)/com.alejandro.hermes-desktop" >/dev/null; codesign --verify --deep --strict "$$HOME/Applications/Hermes.app"; ! xattr -p com.apple.quarantine "$$HOME/Applications/Hermes.app" >/dev/null 2>&1; fi
+	@if command -v hermes >/dev/null; then test -L "$$HOME/Applications/Hermes.app"; test "$$(plutil -extract RunAtLoad raw -o - "$$HOME/Library/LaunchAgents/com.alejandro.hermes-desktop.plist" 2>/dev/null || printf false)" = false; codesign --verify --deep --strict "$$HOME/Applications/Hermes.app"; ! xattr -p com.apple.quarantine "$$HOME/Applications/Hermes.app" >/dev/null 2>&1; fi

@@ -11,7 +11,7 @@ fi
 
 mkdir -p "$HOME/Library/Logs"
 exec >>"$HOME/Library/Logs/mac-mini-maintenance.log" 2>&1
-printf '\n[%s] weekly maintenance\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')"
+printf '\n[%s] daily maintenance\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')"
 
 brew update
 brew upgrade --formula --yes
