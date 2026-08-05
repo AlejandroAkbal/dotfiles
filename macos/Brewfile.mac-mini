@@ -1,0 +1,16 @@
+# Mac mini native packages. Language runtimes belong in project mise.toml files.
+brew "blueutil"
+brew "cloudflared"
+brew "gh"
+brew "googleworkspace-cli"
+brew "mise"
+brew "mole"
+brew "ripgrep"
+brew "rtk"
+tap "kfastov/tap"
+brew "kfastov/tap/tgcli"
+
+cask "google-chrome"
+cask "jump-desktop-connect"
+cask "orbstack"
+cask "raycast"
