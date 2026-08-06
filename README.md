@@ -58,12 +58,14 @@ Chrome 136+ refuses `--remote-debugging-port` on the default profile, so the age
 Setup on a new Mac:
 
 ```bash
-# 1. Create the debug profile as a one-time copy of the real profile
-#    (brings cookies/logins across; afterwards Chrome Sync keeps it fresh)
+# 1. Create the debug profile as a one-time copy of the real profile's auth state.
+#    What transfers: the Google account token files (Accounts, Sync Data,
+#    Login Data For Account) which carry the signed-in Chrome Sync session.
+#    What does NOT transfer: site cookies (encrypted with the macOS Keychain
+#    "Chrome Safe Storage" key, which is per-user-session, not per-profile).
 mkdir -p "$HOME/Library/Application Support/ChromeDebug"
 cp -R "$HOME/Library/Application Support/Google/Chrome/Default" \
       "$HOME/Library/Application Support/ChromeDebug/"
-
 # 2. Suppress the "controlled by automation" infobar in the debug profile
 python3 - <<'EOF'
 import json, os
@@ -96,6 +98,7 @@ chmod +x "$HOME/Applications/Chrome Debug.app/Contents/MacOS/Chrome Debug"
 Verify: `lsof -nP -iTCP:9222 -sTCP:LISTEN` shows Chrome listening, `curl http://127.0.0.1:9222/json/version` returns browser metadata, and Hermes `mcp__chrome__list_pages` lists the live tabs.
 
 Notes:
+- **How logins work in the debug profile:** the copy carries the Google account token files (`Accounts`, `Sync Data`, `Login Data For Account`), so the profile is signed into Chrome Sync — passwords/extensions/bookmarks sync down. Site cookies do NOT transfer (keychain-encrypted), so per-site logins come from Chrome Sync's saved passwords + password autofill, not from copied cookies.
 - Sign the debug profile into Google Sync once (manual) so passwords/extensions/bookmarks stay current; cookies do NOT sync, so re-login sites when needed.
 - If the gateway was started before the MCP config change, restart it (`hermes gateway restart`) — a stale `hermes serve` process holds old MCP args in memory.
 - Keep the debug profile lean: heavy tabs (Discord, Telegram Web) + remote debugging = high CPU. Close tabs you don't need.
