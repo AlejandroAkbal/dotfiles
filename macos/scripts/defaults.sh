@@ -64,7 +64,7 @@ install_ssh_policy() {
 install_hermes
 install_user_agent com.alejandro.weekly-maintenance
 if command -v hermes &>/dev/null; then
-  install_user_agent com.alejandro.hermes-desktop
+  install_user_agent com.alejandro.hermes-serve
 fi
 install_system_daemon
 install_ssh_policy

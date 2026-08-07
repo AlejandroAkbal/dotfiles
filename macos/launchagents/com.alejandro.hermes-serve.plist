@@ -3,16 +3,22 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.alejandro.hermes-desktop</string>
+  <string>com.alejandro.hermes-serve</string>
   <key>LimitLoadToSessionType</key>
   <string>Aqua</string>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/zsh</string>
     <string>-lc</string>
-    <string>exec "$HOME/.local/bin/hermes" desktop</string>
+    <string>exec "$HOME/.local/bin/hermes" serve --host 127.0.0.1 --port 9119</string>
   </array>
   <key>RunAtLoad</key>
-  <false/>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/alejandro/.hermes/logs/serve.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/alejandro/.hermes/logs/serve.error.log</string>
 </dict>
 </plist>
