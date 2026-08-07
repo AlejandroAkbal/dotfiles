@@ -21,6 +21,7 @@ install_hermes() {
   (( ${#hermes_apps[@]} == 1 )) || { printf 'Expected one Hermes.app, found %s.\n' "${#hermes_apps[@]}" >&2; exit 1; }
   mkdir -p "$HOME/Applications"
   ln -sfn "${hermes_apps[0]}" "$HOME/Applications/Hermes.app"
+  install -m 755 "$script_dir/hermes-serve.sh" "$HOME/.local/bin/mac-mini-hermes-serve"
 }
 
 install_user_agent() {

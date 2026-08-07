@@ -35,6 +35,7 @@ mac-mini-check:
 	@launchctl print "gui/$$(id -u)/com.alejandro.weekly-maintenance" >/dev/null
 	@"$$HOME/.local/bin/mac-mini-maintenance" --check >/dev/null
 	@plutil -lint macos/launchagents/com.alejandro.hermes-serve.plist >/dev/null
+	@"$$HOME/.local/bin/mac-mini-hermes-serve" --check
 	@test "$$(defaults read com.apple.finder AppleShowAllExtensions)" = 1
 	@/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate | grep -q 'enabled'
 	@/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode | grep -q 'on'
