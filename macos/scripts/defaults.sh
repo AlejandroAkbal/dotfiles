@@ -4,29 +4,30 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd "$script_dir/.." && pwd)"
 
-mise_activation='eval "$(/opt/homebrew/bin/mise activate zsh)"'
+brew_bin="$(command -v brew || true)"
+for candidate in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+  [[ -n "$brew_bin" || ! -x "$candidate" ]] || brew_bin="$candidate"
+done
+if [[ -n "$brew_bin" ]]; then
+  brew_prefix="$("$brew_bin" --prefix)"
+  export PATH="$brew_prefix/bin:$HOME/.local/bin:$PATH"
+fi
+mise_bin="$(command -v mise || true)"
+[[ -n "$mise_bin" ]] || { printf 'mise is required; run the Mac mini Brewfile first.\n' >&2; exit 1; }
+printf -v mise_activation 'eval "$(%q activate zsh)"' "$mise_bin"
 touch "$HOME/.zshrc"
 grep -qxF "$mise_activation" "$HOME/.zshrc" || printf '%s\n' "$mise_activation" >> "$HOME/.zshrc"
 mkdir -p "$HOME/.local/bin"
 install -m 755 "$script_dir/maintenance.sh" "$HOME/.local/bin/mac-mini-maintenance"
 
-install_hermes() {
-  command -v hermes &>/dev/null || return 0
-
-  command -v rtk &>/dev/null && rtk init --agent hermes
-  hermes desktop --build-only
-  shopt -s nullglob
-  hermes_apps=("$HOME"/.hermes/hermes-agent/apps/desktop/release/*/Hermes.app)
-  shopt -u nullglob
-  (( ${#hermes_apps[@]} == 1 )) || { printf 'Expected one Hermes.app, found %s.\n' "${#hermes_apps[@]}" >&2; exit 1; }
-  mkdir -p "$HOME/Applications"
-  ln -sfn "${hermes_apps[0]}" "$HOME/Applications/Hermes.app"
-  install -m 755 "$script_dir/hermes-serve.sh" "$HOME/.local/bin/mac-mini-hermes-serve"
+install_bitwarden_login() {
+  mkdir -p "$HOME/.local/bin"
+  install -m 755 "$script_dir/bitwarden-login" "$HOME/.local/bin/bitwarden-login"
 }
 
 install_user_agent() {
   local label="$1"
-  local source_agent="$repo_dir/launchagents/$label.plist"
+  local source_agent="${2:-$repo_dir/launchagents/$label.plist}"
   local launch_agent="$HOME/Library/LaunchAgents/$label.plist"
 
   mkdir -p "$HOME/Library/LaunchAgents"
@@ -62,10 +63,10 @@ install_ssh_policy() {
   sudo systemsetup -setremotelogin on
 }
 
-install_hermes
+install_bitwarden_login
 install_user_agent com.alejandro.weekly-maintenance
-if command -v hermes &>/dev/null; then
-  install_user_agent com.alejandro.hermes-serve
+if [[ -d "/Applications/Google Chrome.app" ]]; then
+  install_user_agent com.alejandro.chrome-debug
 fi
 install_system_daemon
 install_ssh_policy
@@ -74,8 +75,9 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
 
 pmset -g custom | grep -q 'autorestart *1' || sudo systemsetup -setrestartpowerfailure on
-pmset -g custom | grep -Eq '^[[:space:]]*sleep[[:space:]]+0$' || sudo pmset -a sleep 0
-sudo pmset repeat restart MTWRFSU 03:00:00
+sudo pmset -g custom | grep -Eq '^[[:space:]]*sleep[[:space:]]+0$' || sudo pmset -a sleep 0
+# Periodic restart is owned by the native Codex date-gated task, not pmset.
+sudo pmset repeat cancel
 networksetup -listallnetworkservices | sed '1d;/^\*/d' | while IFS= read -r service; do
   networksetup -getinfo "$service" | grep -q '^IPv6: Off$' || sudo networksetup -setv6off "$service"
 done

@@ -41,7 +41,7 @@ Minimal unattended-machine setup:
 make mac-mini
 ```
 
-This installs Homebrew when missing, applies `macos/Brewfile.mac-mini`, prevents system sleep while retaining the existing display-sleep timer, disables IPv6 on enabled network services, enables restart after power failure, schedules a daily 03:00 restart, and runs daily Homebrew formula updates plus macOS software updates at 00:00. It enables the native macOS Application Firewall with stealth mode and installs an SSH policy that permits public-key authentication only. If Hermes is already installed, it also enables RTK terminal-output filtering and builds the Desktop app, but Desktop launch is manual rather than automatic; otherwise install Hermes and rerun `make mac-mini-defaults`. Signed GUI apps use their own updaters. It also auto-hides the Dock, empties both persistent Dock sections, disables recent apps, and shows Finder filename extensions and the path bar. FileVault is deliberately not enabled because it prevents automatic login after an unattended restart.
+This installs Homebrew when missing, applies `macos/Brewfile.mac-mini` (including ChatGPT/Codex, Bitwarden CLI, GWS CLI, OpenTofu, rclone, restic, RTK, and the Chrome/Jump/OrbStack/Raycast casks), prevents system sleep while retaining the existing display-sleep timer, disables IPv6 on enabled network services, enables restart after power failure, and clears any `pmset` periodic restart. The current Mac's every-three-days restart is owned separately by a native Codex Scheduled Task that runs daily at 03:00 and date-gates the actual restart. The setup also runs daily Homebrew formula updates plus macOS software updates at 00:00. It enables the native macOS Application Firewall with stealth mode and installs an SSH policy that permits public-key authentication only. Signed GUI apps use their own updaters. It also auto-hides the Dock, empties both persistent Dock sections, disables recent apps, and shows Finder filename extensions and the path bar. FileVault is deliberately not enabled because it prevents automatic login after an unattended restart.
 
 Run `make mac-mini-clean` once after setup to remove GarageBand with Mole. Mole defaults to Trash and the target deliberately leaves caches, project artifacts, shared Apple Loops, Trash, and other applications alone. Run `mo clean --dry-run` manually only when deeper cleanup is needed; its cache scan can take several minutes.
 
@@ -58,15 +58,10 @@ Chrome 136+ refuses `--remote-debugging-port` on the default profile, so the age
 Setup on a new Mac:
 
 ```bash
-# 1. Create the debug profile as a one-time copy of the real profile.
-#    This carries EVERYTHING: cookies, Google account token files (Accounts,
-#    Sync Data, Login Data For Account), saved passwords, extensions.
-#    Cookies are encrypted with the macOS Keychain "Chrome Safe Storage" key,
-#    but the copy keeps the same keychain context (same user session), so the
-#    debug profile decrypts them fine. Afterwards Chrome Sync keeps state fresh.
-mkdir -p "$HOME/Library/Application Support/ChromeDebug"
-cp -R "$HOME/Library/Application Support/Google/Chrome/Default" \
-      "$HOME/Library/Application Support/ChromeDebug/"
+# 1. Create an empty, separate debug profile. Do not copy the real profile,
+#    cookies, saved passwords, session files, or browser auth state.
+mkdir -p "$HOME/Library/Application Support/ChromeDebug/Default"
+[ -e "$HOME/Library/Application Support/ChromeDebug/Default/Preferences" ] || printf '{}' > "$HOME/Library/Application Support/ChromeDebug/Default/Preferences"
 # 2. Suppress the "controlled by automation" infobar in the debug profile
 python3 - <<'EOF'
 import json, os
@@ -84,37 +79,34 @@ EOF
 mkdir -p "$HOME/Applications/Chrome Debug.app/Contents/MacOS"
 cat > "$HOME/Applications/Chrome Debug.app/Contents/MacOS/Chrome Debug" <<'EOF'
 #!/bin/bash
-exec /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+# Launch the signed Chrome bundle through LaunchServices. Directly execing
+# Chrome from this wrapper caused multi-second renderer/paint delays on macOS.
+exec /usr/bin/open -na /Applications/Google\ Chrome.app --args \
   --user-data-dir="$HOME/Library/Application Support/ChromeDebug" \
   --remote-debugging-port=9222
 EOF
 chmod +x "$HOME/Applications/Chrome Debug.app/Contents/MacOS/Chrome Debug"
 
-# 4. Hermes MCP config: ~/.hermes/config.yaml -> mcp_servers.chrome
-#    args: ["-y", "chrome-devtools-mcp@latest", "--browserUrl=http://127.0.0.1:9222"]
-#    (NOT --autoConnect: it looks for DevToolsActivePort, which Chrome 151+
-#     never writes for non-default data dirs)
+# 4. Codex uses the existing ChromeDebug CDP endpoint at http://127.0.0.1:9222.
 ```
 
-Verify: `lsof -nP -iTCP:9222 -sTCP:LISTEN` shows Chrome listening, `curl http://127.0.0.1:9222/json/version` returns browser metadata, and Hermes `mcp__chrome__list_pages` lists the live tabs.
+Verify: `lsof -nP -iTCP:9222 -sTCP:LISTEN` shows Chrome listening and `curl http://127.0.0.1:9222/json/version` returns browser metadata.
 
 Notes:
-- **How logins work in the debug profile:** the one-time copy carries the Google account token files (`Accounts`, `Sync Data`, `Login Data For Account`) AND the site cookies, so the profile is signed into Chrome Sync and stays logged into the same sites as the real profile. Chrome Sync keeps passwords/extensions/bookmarks current.
-- The debug profile is a separate Chrome "profile" but lives in its own data dir, so it does NOT appear in the default Chrome's profile switcher — you'll only see it when Chrome runs with `--user-data-dir=ChromeDebug` (the wrapper).
-- If the gateway was started before the MCP config change, restart it (`hermes gateway restart`) — a stale `hermes serve` process holds old MCP args in memory.
+- **How logins work in the debug profile:** sign in again interactively, or use Chrome Sync after launching the separate profile. Never copy raw browser profiles or session files between Macs.
+- The debug profile is a separate Chrome data dir, so it does not appear in the default Chrome profile switcher.
 - Keep the debug profile lean: heavy tabs (Discord, Telegram Web) + remote debugging = high CPU. Close tabs you don't need.
 
-Open or focus Hermes anytime from Spotlight/Raycast, or run `open -a Hermes`.
+Open or focus ChatGPT anytime from Spotlight/Raycast, or run `open -a ChatGPT`.
 
-After installing or migrating Hermes, restore background computer control:
+### Codex integrations on a replacement Mac
 
-```bash
-hermes computer-use install
-hermes tools enable computer_use
-cua-driver permissions grant
-```
+These settings are intentionally split between portable setup and machine secrets:
 
-Accessibility and Screen Recording consent must be granted again on each Mac.
+- **Bitwarden browser login:** use the dedicated organization account and the local `bitwarden-login ITEM_NAME` helper. Re-provision these three Keychain entries on each Mac: `hermes-bitwarden-client-id`, `hermes-bitwarden-client-secret`, and `hermes-bitwarden-master-password`. Never copy Keychain values or browser profiles into this repository.
+- **Local 9Router on the Mac mini:** keep Codex at `https://9router.akbal.dev/v1`; when the Coolify-hosted router is local, map only `9router.akbal.dev` to `127.0.0.1` in `/etc/hosts` so Traefik receives the original Host/SNI. Do not switch Codex to an unpublished localhost port; public DNS remains unchanged for other clients. Verify `/api/health` and one real Codex request before treating it as complete.
+
+The ChromeDebug LaunchAgent starts the separate CDP profile on port `9222` at login. It does not migrate credentials; provision Chrome/Bitwarden access separately.
 
 ### Useful commands
 

@@ -8,7 +8,7 @@ mac-dry-run:
 
 mac-mini:
 	@command -v brew >/dev/null || /bin/bash -c "$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-	@"$$(command -v brew || printf /opt/homebrew/bin/brew)" bundle install --file macos/Brewfile.mac-mini
+	@brew_bin="$$(command -v brew || true)"; test -n "$$brew_bin" || for candidate in /opt/homebrew/bin/brew /usr/local/bin/brew; do test -x "$$candidate" && brew_bin="$$candidate" && break; done; test -n "$$brew_bin"; "$$brew_bin" bundle install --file macos/Brewfile.mac-mini
 	@bash macos/scripts/defaults.sh
 
 mac-mini-defaults:
@@ -26,7 +26,7 @@ mac-mini-check:
 	@test "$$(defaults read com.apple.dock persistent-others | tr -d '[:space:]')" = '()'
 	@pmset -g custom | grep -q 'autorestart *1'
 	@pmset -g custom | grep -Eq '^[[:space:]]*sleep[[:space:]]+0$$'
-	@pmset -g sched | grep -q 'restart at 3:00AM every day'
+	@test -z "$$(pmset -g sched | grep -E '^repeating (restart|wake)' || true)"
 	@networksetup -listallnetworkservices | sed '1d;/^\*/d' | while IFS= read -r service; do networksetup -getinfo "$$service" | grep -q '^IPv6: Off$$' || exit 1; done
 	@test "$$(defaults read com.apple.finder AppleShowAllExtensions)" = 1
 	@test "$$(defaults read com.apple.finder ShowPathbar)" = 1
@@ -34,8 +34,6 @@ mac-mini-check:
 	@plutil -lint "$$HOME/Library/LaunchAgents/com.alejandro.weekly-maintenance.plist" >/dev/null
 	@launchctl print "gui/$$(id -u)/com.alejandro.weekly-maintenance" >/dev/null
 	@"$$HOME/.local/bin/mac-mini-maintenance" --check >/dev/null
-	@plutil -lint macos/launchagents/com.alejandro.hermes-serve.plist >/dev/null
-	@"$$HOME/.local/bin/mac-mini-hermes-serve" --check
 	@test "$$(defaults read com.apple.finder AppleShowAllExtensions)" = 1
 	@/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate | grep -q 'enabled'
 	@/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode | grep -q 'on'
@@ -45,5 +43,4 @@ mac-mini-check:
 	@test -f /etc/ssh/sshd_config.d/99-key-only.conf
 	@grep -qx 'PasswordAuthentication no' /etc/ssh/sshd_config.d/99-key-only.conf
 	@grep -qx 'AuthenticationMethods publickey' /etc/ssh/sshd_config.d/99-key-only.conf
-	@if command -v hermes >/dev/null && command -v rtk >/dev/null; then hermes plugins list --plain --no-bundled | grep -q 'enabled.*rtk-rewrite'; fi
-	@if command -v hermes >/dev/null; then test -L "$$HOME/Applications/Hermes.app"; launchctl print "gui/$$(id -u)/com.alejandro.hermes-serve" >/dev/null; ! launchctl print "gui/$$(id -u)/com.alejandro.hermes-desktop" >/dev/null 2>&1; codesign --verify --deep --strict "$$HOME/Applications/Hermes.app"; ! xattr -p com.apple.quarantine "$$HOME/Applications/Hermes.app" >/dev/null 2>&1; fi
+	@if test -d "/Applications/Google Chrome.app"; then plutil -lint macos/launchagents/com.alejandro.chrome-debug.plist >/dev/null; launchctl print "gui/$$(id -u)/com.alejandro.chrome-debug" >/dev/null; curl -fsS http://127.0.0.1:9222/json/version >/dev/null; fi

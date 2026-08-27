@@ -3,22 +3,16 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.alejandro.hermes-serve</string>
+  <string>com.alejandro.chrome-debug</string>
   <key>LimitLoadToSessionType</key>
   <string>Aqua</string>
   <key>ProgramArguments</key>
   <array>
     <string>/bin/zsh</string>
     <string>-lc</string>
-    <string>exec "$HOME/.local/bin/mac-mini-hermes-serve"</string>
+    <string>exec /usr/bin/open -na '/Applications/Google Chrome.app' --args --user-data-dir="$HOME/Library/Application Support/ChromeDebug" --remote-debugging-port=9222</string>
   </array>
   <key>RunAtLoad</key>
   <true/>
-  <key>KeepAlive</key>
-  <true/>
-  <key>StandardOutPath</key>
-  <string>/Users/alejandro/.hermes/logs/serve.log</string>
-  <key>StandardErrorPath</key>
-  <string>/Users/alejandro/.hermes/logs/serve.error.log</string>
 </dict>
 </plist>

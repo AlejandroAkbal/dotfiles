@@ -1,0 +1,150 @@
+#!/usr/bin/env node
+/** Log into ChromeDebug with an organization-owned Bitwarden item. */
+
+import { execFileSync, spawnSync } from "node:child_process";
+
+const CDP = "http://127.0.0.1:9222";
+const keychain = {
+  client_id: "hermes-bitwarden-client-id",
+  client_secret: "hermes-bitwarden-client-secret",
+  master_password: "hermes-bitwarden-master-password",
+};
+let nextId = 0;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const secret = (service) => execFileSync(
+  "security",
+  ["find-generic-password", "-a", process.env.USER, "-s", service, "-w"],
+  { encoding: "utf8" },
+).trim();
+
+async function json(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`ChromeDebug HTTP ${response.status}`);
+  return response.json();
+}
+
+async function ws(url) {
+  const socket = new WebSocket(url);
+  await new Promise((resolve, reject) => {
+    socket.addEventListener("open", resolve, { once: true });
+    socket.addEventListener("error", () => reject(new Error("ChromeDebug WebSocket failed")), { once: true });
+  });
+  return socket;
+}
+
+function call(socket, method, params = {}) {
+  const id = ++nextId;
+  return new Promise((resolve, reject) => {
+    const onMessage = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.id !== id) return;
+      socket.removeEventListener("message", onMessage);
+      if (message.error) reject(new Error(message.error.message || "CDP error"));
+      else resolve(message.result || {});
+    };
+    socket.addEventListener("message", onMessage);
+    socket.send(JSON.stringify({ id, method, params }));
+  });
+}
+
+function item(name) {
+  const env = { ...process.env };
+  env.BW_CLIENTID = secret(keychain.client_id);
+  env.BW_CLIENTSECRET = secret(keychain.client_secret);
+  env.BW_MASTER_PASSWORD = secret(keychain.master_password);
+  try {
+    const status = JSON.parse(execFileSync("bw", ["status", "--raw"], { env, encoding: "utf8" }));
+    if (status.status === "unauthenticated") execFileSync("bw", ["login", "--apikey"], { env, stdio: "ignore" });
+    const session = execFileSync(
+      "bw", ["unlock", "--passwordenv", "BW_MASTER_PASSWORD", "--raw"], { env, encoding: "utf8" },
+    ).trim();
+    env.BW_SESSION = session;
+    execFileSync("bw", ["sync", "--session", session], { env, stdio: "ignore" });
+    const value = JSON.parse(execFileSync("bw", ["get", "item", name, "--session", session], { env, encoding: "utf8" }));
+    if (!value.organizationId) throw new Error("refusing a personal-vault item; organization items only");
+    const login = value.login || {};
+    return { name: value.name, username: login.username || "", password: login.password || "", uri: login.uris?.[0]?.uri || "" };
+  } finally {
+    spawnSync("bw", ["lock"], { env, stdio: "ignore" });
+  }
+}
+
+async function target(uri) {
+  const pages = (await json(`${CDP}/json/list`)).filter((p) => p.type === "page" && p.webSocketDebuggerUrl);
+  const host = new URL(uri).host;
+  const existing = pages.find((p) => new URL(p.url).host === host);
+  if (existing) return existing;
+  const browser = await ws((await json(`${CDP}/json/version`)).webSocketDebuggerUrl);
+  const id = (await call(browser, "Target.createTarget", { url: uri })).targetId;
+  browser.close();
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const page = (await json(`${CDP}/json/list`)).find((p) => p.id === id && p.webSocketDebuggerUrl);
+    if (page) return page;
+    await sleep(250);
+  }
+  throw new Error("ChromeDebug did not create the login tab");
+}
+
+async function main() {
+  const name = process.argv[2];
+  if (name === "--help" || name === "-h") {
+    console.log("usage: bitwarden-login ITEM_NAME");
+    console.log("logs into ITEM_NAME from the restricted Bitwarden organization account");
+    console.log("requires ChromeDebug CDP at http://127.0.0.1:9222");
+    return;
+  }
+  if (!name) throw new Error("usage: bitwarden-login ITEM_NAME");
+  const login = item(name);
+  if (!login.uri) throw new Error(`Bitwarden item '${login.name}' has no login URI`);
+  const page = await target(login.uri);
+  const socket = await ws(page.webSocketDebuggerUrl);
+  try {
+    await call(socket, "Page.enable");
+    await call(socket, "Runtime.enable");
+    await call(socket, "Page.navigate", { url: login.uri });
+    await sleep(2000);
+    const expression = `(() => {
+      const username = ${JSON.stringify(login.username)};
+      const password = ${JSON.stringify(login.password)};
+      const pick = (selectors) => selectors.map((selector) => document.querySelector(selector)).find(Boolean);
+      const user = pick(['input[autocomplete="username"]', 'input[type="email"]', 'input[name*="user" i]', 'input[name*="email" i]', 'input[id*="user" i]', 'input[id*="email" i]']);
+      const pass = document.querySelector('input[type="password"]');
+      const set = (element, value) => {
+        if (!element || value === '') return false;
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+        setter.call(element, value);
+        element.dispatchEvent(new Event('input', {bubbles: true}));
+        element.dispatchEvent(new Event('change', {bubbles: true}));
+        return true;
+      };
+      const userSet = set(user, username);
+      const passSet = set(pass, password);
+      const form = pass?.form || user?.form;
+      if (!form) return {userSet, passSet, submitted: false};
+      form.requestSubmit();
+      return {userSet, passSet, submitted: true};
+    })()`;
+    const result = await call(socket, "Runtime.evaluate", { expression, returnByValue: true });
+    const value = result.result?.value || {};
+    if (!value.passSet) {
+      const current = await call(socket, "Runtime.evaluate", { expression: "location.href", returnByValue: true });
+      const url = current.result?.value || "";
+      if (new URL(url).host === new URL(login.uri).host && new URL(url).pathname !== new URL(login.uri).pathname) {
+        console.log(JSON.stringify({ item: login.name, already_authenticated: true, url }));
+        return;
+      }
+      throw new Error("password field was not found");
+    }
+    await sleep(3000);
+    const current = await call(socket, "Runtime.evaluate", { expression: "location.href", returnByValue: true });
+    console.log(JSON.stringify({ item: login.name, submitted: Boolean(value.submitted), url: current.result?.value || "" }));
+  } finally {
+    socket.close();
+  }
+}
+
+main().catch((error) => {
+  console.error(error.message);
+  process.exitCode = 1;
+});
