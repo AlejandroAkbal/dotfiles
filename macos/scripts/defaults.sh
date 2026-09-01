@@ -20,11 +20,6 @@ grep -qxF "$mise_activation" "$HOME/.zshrc" || printf '%s\n' "$mise_activation" 
 mkdir -p "$HOME/.local/bin"
 install -m 755 "$script_dir/maintenance.sh" "$HOME/.local/bin/mac-mini-maintenance"
 
-install_bitwarden_login() {
-  mkdir -p "$HOME/.local/bin"
-  install -m 755 "$script_dir/bitwarden-login" "$HOME/.local/bin/bitwarden-login"
-}
-
 install_user_agent() {
   local label="$1"
   local source_agent="${2:-$repo_dir/launchagents/$label.plist}"
@@ -63,11 +58,7 @@ install_ssh_policy() {
   sudo systemsetup -setremotelogin on
 }
 
-install_bitwarden_login
 install_user_agent com.alejandro.weekly-maintenance
-if [[ -d "/Applications/Google Chrome.app" ]]; then
-  install_user_agent com.alejandro.chrome-debug
-fi
 install_system_daemon
 install_ssh_policy
 

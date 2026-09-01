@@ -51,62 +51,13 @@ Browser policy:
 - Use the persistent native Google Chrome profile for logged-in sites, driven through background computer use. Sign in again or use Chrome Sync on a replacement Mac; never copy raw browser profiles or session files.
 - Use Camofox only for isolated or anti-bot browsing.
 
-### Chrome remote-debugging profile (agent-controlled Chrome)
-
-Chrome 136+ refuses `--remote-debugging-port` on the default profile, so the agent-driven Chrome runs from a separate non-default data dir. This is what makes autonomous (cron) browser control work with no manual consent clicks.
-
-Setup on a new Mac:
-
-```bash
-# 1. Create an empty, separate debug profile. Do not copy the real profile,
-#    cookies, saved passwords, session files, or browser auth state.
-mkdir -p "$HOME/Library/Application Support/ChromeDebug/Default"
-[ -e "$HOME/Library/Application Support/ChromeDebug/Default/Preferences" ] || printf '{}' > "$HOME/Library/Application Support/ChromeDebug/Default/Preferences"
-# 2. Suppress the "controlled by automation" infobar in the debug profile
-python3 - <<'EOF'
-import json, os
-p = os.path.expanduser('~/Library/Application Support/ChromeDebug/Default/Preferences')
-d = json.load(open(p))
-d.setdefault('browser', {})['suppress_automation_infobar'] = True
-d.setdefault('profile', {})['exit_type'] = 'Normal'
-d['session'] = {'restore_on_startup': 5, 'restore_on_startup_migrated': True}  # default NTP
-tmp = p + '.tmp'
-with open(tmp, 'w') as f: json.dump(d, f); f.write('\n')
-os.replace(tmp, p)
-EOF
-
-# 3. Wrapper app (open -a "Chrome Debug" == launch the agent Chrome)
-mkdir -p "$HOME/Applications/Chrome Debug.app/Contents/MacOS"
-cat > "$HOME/Applications/Chrome Debug.app/Contents/MacOS/Chrome Debug" <<'EOF'
-#!/bin/bash
-# Launch the signed Chrome bundle through LaunchServices. Directly execing
-# Chrome from this wrapper caused multi-second renderer/paint delays on macOS.
-exec /usr/bin/open -na /Applications/Google\ Chrome.app --args \
-  --user-data-dir="$HOME/Library/Application Support/ChromeDebug" \
-  --remote-debugging-port=9222
-EOF
-chmod +x "$HOME/Applications/Chrome Debug.app/Contents/MacOS/Chrome Debug"
-
-# 4. Codex uses the existing ChromeDebug CDP endpoint at http://127.0.0.1:9222.
-```
-
-Verify: `lsof -nP -iTCP:9222 -sTCP:LISTEN` shows Chrome listening and `curl http://127.0.0.1:9222/json/version` returns browser metadata.
-
-Notes:
-- **How logins work in the debug profile:** sign in again interactively, or use Chrome Sync after launching the separate profile. Never copy raw browser profiles or session files between Macs.
-- The debug profile is a separate Chrome data dir, so it does not appear in the default Chrome profile switcher.
-- Keep the debug profile lean: heavy tabs (Discord, Telegram Web) + remote debugging = high CPU. Close tabs you don't need.
-
 Open or focus ChatGPT anytime from Spotlight/Raycast, or run `open -a ChatGPT`.
 
 ### Codex integrations on a replacement Mac
 
 These settings are intentionally split between portable setup and machine secrets:
 
-- **Bitwarden browser login:** use the dedicated organization account and the local `bitwarden-login ITEM_NAME` helper. Re-provision these three Keychain entries on each Mac: `hermes-bitwarden-client-id`, `hermes-bitwarden-client-secret`, and `hermes-bitwarden-master-password`. Never copy Keychain values or browser profiles into this repository.
 - **Local 9Router on the Mac mini:** keep Codex at `https://9router.akbal.dev/v1`; when the Coolify-hosted router is local, map only `9router.akbal.dev` to `127.0.0.1` in `/etc/hosts` so Traefik receives the original Host/SNI. Do not switch Codex to an unpublished localhost port; public DNS remains unchanged for other clients. Verify `/api/health` and one real Codex request before treating it as complete.
-
-The ChromeDebug LaunchAgent starts the separate CDP profile on port `9222` at login. It does not migrate credentials; provision Chrome/Bitwarden access separately.
 
 ### Useful commands
 

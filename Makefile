@@ -43,4 +43,3 @@ mac-mini-check:
 	@test -f /etc/ssh/sshd_config.d/99-key-only.conf
 	@grep -qx 'PasswordAuthentication no' /etc/ssh/sshd_config.d/99-key-only.conf
 	@grep -qx 'AuthenticationMethods publickey' /etc/ssh/sshd_config.d/99-key-only.conf
-	@if test -d "/Applications/Google Chrome.app"; then plutil -lint macos/launchagents/com.alejandro.chrome-debug.plist >/dev/null; launchctl print "gui/$$(id -u)/com.alejandro.chrome-debug" >/dev/null; curl -fsS http://127.0.0.1:9222/json/version >/dev/null; fi
