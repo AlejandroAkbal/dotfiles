@@ -41,10 +41,20 @@ else
 fi
 if "${restic[@]}" backup --exclude-file="$exclude" --exclude-caches --exclude-cloud-files --skip-if-unchanged --tag mac-mini "$source" >>"$log" 2>&1; then
   if "${restic[@]}" forget --tag mac-mini --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune >>"$log" 2>&1; then
-    finished=$(/bin/date -u +%FT%TZ)
-    printf '[%s] retention success policy=daily-7-weekly-4-monthly-6\n' "$finished" >>"$log"
-    printf '[%s] backup success\n' "$finished" >>"$log"
-    printf 'status=success\nstarted=%s\nfinished=%s\n' "$started" "$finished" >"$state_file"
+    subset="$(($(date +%j) % 100 + 1))/100"
+    if "${restic[@]}" check --read-data-subset="$subset" >>"$log" 2>&1; then
+      finished=$(/bin/date -u +%FT%TZ)
+      printf '[%s] retention success policy=daily-7-weekly-4-monthly-6\n' "$finished" >>"$log"
+      printf '[%s] integrity success subset=%s\n' "$finished" "$subset" >>"$log"
+      printf '[%s] backup success\n' "$finished" >>"$log"
+      printf 'status=success\nstarted=%s\nfinished=%s\n' "$started" "$finished" >"$state_file"
+    else
+      rc=$?
+      finished=$(/bin/date -u +%FT%TZ)
+      printf '[%s] integrity failure exit=%s subset=%s\n' "$finished" "$rc" "$subset" >>"$log"
+      printf 'status=failure\nstarted=%s\nfinished=%s\nexit_code=%s\n' "$started" "$finished" "$rc" >"$state_file"
+      exit "$rc"
+    fi
   else
     rc=$?
     finished=$(/bin/date -u +%FT%TZ)
