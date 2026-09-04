@@ -34,6 +34,12 @@ mac-mini-check:
 	@plutil -lint "$$HOME/Library/LaunchAgents/com.alejandro.weekly-maintenance.plist" >/dev/null
 	@launchctl print "gui/$$(id -u)/com.alejandro.weekly-maintenance" >/dev/null
 	@"$$HOME/.local/bin/mac-mini-maintenance" --check >/dev/null
+	@cmp -s macos/scripts/mac-mini-backup "$$HOME/.local/bin/mac-mini-backup"
+	@cmp -s macos/restic/macmini-excludes.txt "$$HOME/.config/restic/macmini-excludes.txt"
+	@cmp -s macos/launchagents/com.alejandro.mac-mini-backup.plist "$$HOME/Library/LaunchAgents/com.alejandro.mac-mini-backup.plist"
+	@test "$$(readlink "$$HOME/.hermes/scripts/mac-mini-backup-watchdog.py")" = "$$(pwd)/macos/scripts/mac-mini-backup-watchdog.py"
+	@plutil -lint "$$HOME/Library/LaunchAgents/com.alejandro.mac-mini-backup.plist" >/dev/null
+	@launchctl print "gui/$$(id -u)/com.alejandro.mac-mini-backup" >/dev/null
 	@test "$$(defaults read com.apple.finder AppleShowAllExtensions)" = 1
 	@/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate | grep -q 'enabled'
 	@/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode | grep -q 'on'

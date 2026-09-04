@@ -19,6 +19,11 @@ touch "$HOME/.zshrc"
 grep -qxF "$mise_activation" "$HOME/.zshrc" || printf '%s\n' "$mise_activation" >> "$HOME/.zshrc"
 mkdir -p "$HOME/.local/bin"
 install -m 755 "$script_dir/maintenance.sh" "$HOME/.local/bin/mac-mini-maintenance"
+install -m 755 "$script_dir/mac-mini-backup" "$HOME/.local/bin/mac-mini-backup"
+install -d -m 755 "$HOME/.hermes/scripts"
+ln -sfn "$script_dir/mac-mini-backup-watchdog.py" "$HOME/.hermes/scripts/mac-mini-backup-watchdog.py"
+install -d -m 755 "$HOME/.config/restic"
+install -m 644 "$repo_dir/restic/macmini-excludes.txt" "$HOME/.config/restic/macmini-excludes.txt"
 
 install_user_agent() {
   local label="$1"
@@ -59,6 +64,7 @@ install_ssh_policy() {
 }
 
 install_user_agent com.alejandro.weekly-maintenance
+install_user_agent com.alejandro.mac-mini-backup "$repo_dir/launchagents/com.alejandro.mac-mini-backup.plist"
 install_system_daemon
 install_ssh_policy
 

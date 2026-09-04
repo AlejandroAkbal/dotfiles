@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.alejandro.mac-mini-backup</string>
+  <key>ProgramArguments</key><array><string>/Users/alejandro/.local/bin/mac-mini-backup</string></array>
+  <key>EnvironmentVariables</key><dict>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StartCalendarInterval</key><dict>
+    <key>Hour</key><integer>0</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+  <key>ProcessType</key><string>Background</string>
+  <key>LowPriorityIO</key><true/>
+  <key>StandardOutPath</key><string>/Users/alejandro/.local/state/mac-mini-backup/launchd.out</string>
+  <key>StandardErrorPath</key><string>/Users/alejandro/.local/state/mac-mini-backup/launchd.err</string>
+</dict></plist>

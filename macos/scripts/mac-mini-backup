@@ -1,0 +1,61 @@
+#!/bin/zsh
+set -euo pipefail
+umask 077
+export PATH="/opt/homebrew/bin:/usr/bin:/bin"
+
+repo='rclone:macmini-backup:MacMini-Backup-Encrypted/repository'
+restic=(/opt/homebrew/bin/restic -o rclone.program=/opt/homebrew/bin/rclone -r "$repo")
+exclude="$HOME/.config/restic/macmini-excludes.txt"
+logdir="$HOME/.local/state/mac-mini-backup"
+log="$logdir/backup.log"
+state_file="$logdir/status"
+orbctl=/usr/local/bin/orbctl
+orb_backup_dir="$HOME/OrbStack-Backup"
+orb_archive="$orb_backup_dir/coolify-node.tar.zst"
+orb_temp="/tmp/mac-mini-backup-coolify-node.$$.tar.zst"
+
+mkdir -p "$logdir"
+lock="$logdir/backup.lock"
+exec 9>>"$lock"
+if ! /usr/bin/lockf -s -t 0 9; then exit 0; fi
+trap '/bin/rm -f "$orb_temp"' EXIT
+export RESTIC_PASSWORD_COMMAND="/usr/bin/security find-generic-password -a $(/usr/bin/id -un) -s macmini-restic-backup -w"
+
+# Full user-home backup. The exclude file removes only regenerable noise.
+source="$HOME"
+
+started=$(/bin/date -u +%FT%TZ)
+printf 'status=running\nstarted=%s\n' "$started" >"$state_file"
+printf '\n[%s] backup start\n' "$started" >>"$log"
+mkdir -p "$orb_backup_dir"
+rm -f "$orb_temp"
+if "$orbctl" export coolify-node "$orb_temp" >>"$log" 2>&1; then
+  mv -f "$orb_temp" "$orb_archive"
+  chmod 600 "$orb_archive"
+else
+  rc=$?
+  finished=$(/bin/date -u +%FT%TZ)
+  printf '[%s] OrbStack export failure exit=%s\n' "$finished" "$rc" >>"$log"
+  printf 'status=failure\nstarted=%s\nfinished=%s\nexit_code=%s\n' "$started" "$finished" "$rc" >"$state_file"
+  exit "$rc"
+fi
+if "${restic[@]}" backup --exclude-file="$exclude" --exclude-caches --exclude-cloud-files --skip-if-unchanged --tag mac-mini "$source" >>"$log" 2>&1; then
+  if "${restic[@]}" forget --tag mac-mini --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune >>"$log" 2>&1; then
+    finished=$(/bin/date -u +%FT%TZ)
+    printf '[%s] retention success policy=daily-7-weekly-4-monthly-6\n' "$finished" >>"$log"
+    printf '[%s] backup success\n' "$finished" >>"$log"
+    printf 'status=success\nstarted=%s\nfinished=%s\n' "$started" "$finished" >"$state_file"
+  else
+    rc=$?
+    finished=$(/bin/date -u +%FT%TZ)
+    printf '[%s] retention failure exit=%s\n' "$finished" "$rc" >>"$log"
+    printf 'status=failure\nstarted=%s\nfinished=%s\nexit_code=%s\n' "$started" "$finished" "$rc" >"$state_file"
+    exit "$rc"
+  fi
+else
+  rc=$?
+  finished=$(/bin/date -u +%FT%TZ)
+  printf '[%s] backup failure exit=%s\n' "$finished" "$rc" >>"$log"
+  printf 'status=failure\nstarted=%s\nfinished=%s\nexit_code=%s\n' "$started" "$finished" "$rc" >"$state_file"
+  exit "$rc"
+fi
