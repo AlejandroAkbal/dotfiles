@@ -27,6 +27,7 @@ source="$HOME"
 started=$(/bin/date -u +%FT%TZ)
 printf 'status=running\nstarted=%s\n' "$started" >"$state_file"
 printf '\n[%s] backup start\n' "$started" >>"$log"
+"${restic[@]}" unlock >>"$log" 2>&1
 mkdir -p "$orb_backup_dir"
 rm -f "$orb_temp"
 if "$orbctl" export coolify-node "$orb_temp" >>"$log" 2>&1; then
