@@ -21,13 +21,42 @@ if ! /usr/bin/lockf -s -t 0 9; then exit 0; fi
 trap '/bin/rm -f "$orb_temp"' EXIT
 export RESTIC_PASSWORD_COMMAND="/usr/bin/security find-generic-password -a $(/usr/bin/id -un) -s macmini-restic-backup -w"
 
+notify_failure() {
+  local stage="$1"
+  local exit_code="$2"
+  local ts="$3"
+  local email_recipient="alexromero652@gmail.com"
+  local email_script="$HOME/.hermes/scripts/send-email.py"
+  
+  if [[ -x "$email_script" ]]; then
+    local recent_log
+    recent_log="$(tail -n 35 "$log" 2>/dev/null || true)"
+    local body="Mac mini daily backup failed during stage: ${stage} (exit code: ${exit_code}) at ${ts} UTC.
+
+Recent log output:
+----------------------------------------
+${recent_log}
+----------------------------------------
+
+State file: ${state_file}
+Log file: ${log}
+Host: $(/bin/hostname -s)
+"
+    /usr/bin/python3 "$email_script" \
+      --to "$email_recipient" \
+      --subject "⚠️ [Alert] Mac mini backup failed (${stage})" \
+      --body "$body" >>"$log" 2>&1 || true
+  fi
+}
+
 # Full user-home backup. The exclude file removes only regenerable noise.
 source="$HOME"
 
 started=$(/bin/date -u +%FT%TZ)
 printf 'status=running\nstarted=%s\n' "$started" >"$state_file"
 printf '\n[%s] backup start\n' "$started" >>"$log"
-"${restic[@]}" unlock >>"$log" 2>&1
+# Best-effort: a transient repo timeout here must not abort the run before backup starts.
+"${restic[@]}" unlock >>"$log" 2>&1 || true
 mkdir -p "$orb_backup_dir"
 rm -f "$orb_temp"
 if "$orbctl" export coolify-node "$orb_temp" >>"$log" 2>&1; then
@@ -38,6 +67,7 @@ else
   finished=$(/bin/date -u +%FT%TZ)
   printf '[%s] OrbStack export failure exit=%s\n' "$finished" "$rc" >>"$log"
   printf 'status=failure\nstarted=%s\nfinished=%s\nexit_code=%s\n' "$started" "$finished" "$rc" >"$state_file"
+  notify_failure "OrbStack export" "$rc" "$finished"
   exit "$rc"
 fi
 if "${restic[@]}" backup --exclude-file="$exclude" --exclude-caches --exclude-cloud-files --skip-if-unchanged --tag mac-mini "$source" >>"$log" 2>&1; then
@@ -54,6 +84,7 @@ if "${restic[@]}" backup --exclude-file="$exclude" --exclude-caches --exclude-cl
       finished=$(/bin/date -u +%FT%TZ)
       printf '[%s] integrity failure exit=%s subset=%s\n' "$finished" "$rc" "$subset" >>"$log"
       printf 'status=failure\nstarted=%s\nfinished=%s\nexit_code=%s\n' "$started" "$finished" "$rc" >"$state_file"
+      notify_failure "Restic integrity check (subset ${subset})" "$rc" "$finished"
       exit "$rc"
     fi
   else
@@ -61,6 +92,7 @@ if "${restic[@]}" backup --exclude-file="$exclude" --exclude-caches --exclude-cl
     finished=$(/bin/date -u +%FT%TZ)
     printf '[%s] retention failure exit=%s\n' "$finished" "$rc" >>"$log"
     printf 'status=failure\nstarted=%s\nfinished=%s\nexit_code=%s\n' "$started" "$finished" "$rc" >"$state_file"
+    notify_failure "Restic retention/prune" "$rc" "$finished"
     exit "$rc"
   fi
 else
@@ -68,5 +100,6 @@ else
   finished=$(/bin/date -u +%FT%TZ)
   printf '[%s] backup failure exit=%s\n' "$finished" "$rc" >>"$log"
   printf 'status=failure\nstarted=%s\nfinished=%s\nexit_code=%s\n' "$started" "$finished" "$rc" >"$state_file"
+  notify_failure "Restic backup" "$rc" "$finished"
   exit "$rc"
 fi

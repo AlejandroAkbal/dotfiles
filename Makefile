@@ -38,6 +38,7 @@ mac-mini-check:
 	@cmp -s macos/restic/macmini-excludes.txt "$$HOME/.config/restic/macmini-excludes.txt"
 	@cmp -s macos/launchagents/com.alejandro.mac-mini-backup.plist "$$HOME/Library/LaunchAgents/com.alejandro.mac-mini-backup.plist"
 	@cmp -s macos/scripts/mac-mini-backup-watchdog.py "$$HOME/.hermes/scripts/mac-mini-backup-watchdog.py"
+	@cmp -s macos/scripts/send-email.py "$$HOME/.hermes/scripts/send-email.py"
 	@plutil -lint "$$HOME/Library/LaunchAgents/com.alejandro.mac-mini-backup.plist" >/dev/null
 	@launchctl print "gui/$$(id -u)/com.alejandro.mac-mini-backup" >/dev/null
 	@test "$$(defaults read com.apple.finder AppleShowAllExtensions)" = 1

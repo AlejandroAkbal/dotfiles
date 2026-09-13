@@ -22,6 +22,7 @@ install -m 755 "$script_dir/maintenance.sh" "$HOME/.local/bin/mac-mini-maintenan
 install -m 755 "$script_dir/mac-mini-backup" "$HOME/.local/bin/mac-mini-backup"
 install -d -m 755 "$HOME/.hermes/scripts"
 install -m 755 "$script_dir/mac-mini-backup-watchdog.py" "$HOME/.hermes/scripts/mac-mini-backup-watchdog.py"
+install -m 755 "$script_dir/send-email.py" "$HOME/.hermes/scripts/send-email.py"
 install -d -m 755 "$HOME/.config/restic"
 install -m 644 "$repo_dir/restic/macmini-excludes.txt" "$HOME/.config/restic/macmini-excludes.txt"
 
