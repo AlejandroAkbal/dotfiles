@@ -12,6 +12,7 @@ LABEL = f"gui/{os.getuid()}/com.alejandro.mac-mini-backup"
 STATE = Path.home() / ".local/state/mac-mini-backup/status"
 ALERT_STATE_FILE = Path.home() / ".local/state/mac-mini-backup/watchdog_alert.json"
 MAX_AGE = dt.timedelta(hours=30)
+MAX_RUNTIME = dt.timedelta(hours=3)  # ponytail: raise only if normal runs approach this
 EMAIL_SCRIPT = Path.home() / ".hermes/scripts/send-email.py"
 ALERT_RECIPIENT = "alexromero652@gmail.com"
 
@@ -38,7 +39,7 @@ def send_alert_email(problems: list[str]):
             pass
 
     body = (
-        "Mac mini backup watchdog detected critical issues:\n\n"
+        "The nightly Mac mini backup is not healthy:\n\n"
         + "\n".join(f"- {p}" for p in problems)
         + f"\n\nChecked at: {now.isoformat()}\nState file: {STATE}\n"
     )
@@ -50,7 +51,7 @@ def send_alert_email(problems: list[str]):
                 "--to",
                 ALERT_RECIPIENT,
                 "--subject",
-                "⚠️ [Alert] Mac mini backup watchdog failure",
+                "Mac mini backup needs attention",
                 "--body",
                 body,
             ],
@@ -68,18 +69,26 @@ def clear_alert_state():
             pass
 
 
+def parse_time(value):
+    if not value:
+        return None
+    try:
+        return dt.datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(dt.timezone.utc)
+    except ValueError:
+        return None
+
+
+def age_text(age):
+    minutes = max(0, int(age.total_seconds() // 60))
+    if minutes < 60:
+        return f"{minutes} minutes"
+    hours, minutes = divmod(minutes, 60)
+    return f"{hours}h {minutes}m"
+
+
 def main():
     problems = []
     report, error = launchd_report()
-    if error:
-        problems.append(error)
-    else:
-        exit_match = re.search(r"last exit code = (\d+)", report)
-        if exit_match and exit_match.group(1) != "0":
-            problems.append(f"last launchd exit code was {exit_match.group(1)}")
-        if '"Hour" => 0' not in report or '"Minute" => 0' not in report:
-            problems.append("launchd schedule is not midnight daily")
-
     values = {}
     try:
         values = dict(
@@ -90,19 +99,37 @@ def main():
     except OSError as exc:
         problems.append(f"status file unavailable: {exc}")
 
-    if values.get("status") != "success":
-        problems.append(f"status is {values.get('status', 'missing')}")
-    finished = values.get("finished")
-    if finished:
-        try:
-            when = dt.datetime.fromisoformat(finished.replace("Z", "+00:00"))
-            age = dt.datetime.now(dt.timezone.utc) - when.astimezone(dt.timezone.utc)
-            if age > MAX_AGE:
-                problems.append(f"last success is {age.days} days old")
-        except ValueError:
-            problems.append("status has an invalid finished timestamp")
-    elif values.get("status") == "success":
-        problems.append("successful status has no finished timestamp")
+    now = dt.datetime.now(dt.timezone.utc)
+    status = values.get("status")
+    started = parse_time(values.get("started"))
+    finished = parse_time(values.get("finished"))
+    active = "\tstate = running" in report
+    exit_match = re.search(r"last exit code = (\d+)", report)
+    exit_code = exit_match.group(1) if exit_match else None
+
+    if error:
+        problems.append(error)
+    elif '"Hour" => 0' not in report or '"Minute" => 0' not in report:
+        problems.append("launchd schedule is not midnight daily")
+
+    if active:
+        if status == "running" and started and now - started > MAX_RUNTIME:
+            problems.append(f"backup has been running for {age_text(now - started)}; it is likely stuck")
+    elif status == "running":
+        when = values.get("started", "an unknown time")
+        age = f" ({age_text(now - started)} ago)" if started else ""
+        result = f"; launchd exited with code {exit_code}" if exit_code and exit_code != "0" else ""
+        problems.append(f"backup started at {when}{age} but never completed{result}")
+    elif status == "failure":
+        code = values.get("exit_code") or exit_code or "unknown"
+        problems.append(f"last backup failed with exit code {code}")
+    elif status == "success":
+        if not finished:
+            problems.append("last backup says success but has no completion time")
+        elif now - finished > MAX_AGE:
+            problems.append(f"no successful backup for {age_text(now - finished)}")
+    elif values:
+        problems.append(f"backup status is invalid: {status or 'missing'}")
 
     if problems:
         alert_msg = "Mac mini backup watchdog alert:\n- " + "\n- ".join(problems)
