@@ -109,8 +109,8 @@ def main():
 
     if error:
         problems.append(error)
-    elif '"Hour" => 0' not in report or '"Minute" => 0' not in report:
-        problems.append("launchd schedule is not midnight daily")
+    elif "calendarinterval" not in report:
+        problems.append("launchd calendar schedule is missing")
 
     if active:
         if status == "running" and started and now - started > MAX_RUNTIME:

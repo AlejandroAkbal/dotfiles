@@ -7,7 +7,7 @@
     <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin</string>
   </dict>
   <key>StartCalendarInterval</key><dict>
-    <key>Hour</key><integer>0</integer>
+    <key>Hour</key><integer>2</integer>
     <key>Minute</key><integer>0</integer>
   </dict>
   <key>ProcessType</key><string>Background</string>
