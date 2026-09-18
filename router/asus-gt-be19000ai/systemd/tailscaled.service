@@ -1,0 +1,13 @@
+[Unit]
+Description=Tailscale node agent
+After=network-pre.target network.target
+Wants=network.target
+
+[Service]
+ExecStart=/usr/sbin/tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=41641
+ExecStartPost=/bin/sh -c 'for i in $(seq 1 30); do TS_IP=$(/usr/sbin/tailscale ip -4 2>/dev/null); [ -n "$TS_IP" ] && break; sleep 1; done; if [ -n "$TS_IP" ]; then /sbin/ifconfig tailscale0 $TS_IP netmask 255.255.255.255 pointopoint $TS_IP up; /sbin/ifconfig lo:1 $TS_IP netmask 255.255.255.255 up; /sbin/route add -net 100.64.0.0 netmask 255.192.0.0 dev tailscale0 2>/dev/null; /usr/sbin/iptables -t nat -C POSTROUTING -o br-+ -j MASQUERADE 2>/dev/null || /usr/sbin/iptables -t nat -I POSTROUTING 1 -o br-+ -j MASQUERADE 2>/dev/null; fi || true'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
