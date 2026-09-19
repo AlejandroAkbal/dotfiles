@@ -94,3 +94,36 @@ curl -sk --resolve 9router.akbal.dev:443:127.0.0.1 \
 ```
 
 The expected healthy result is `{"result": "healthy"}` with no launch, start, or restart action in the recovery log. Do not stop the live VM merely to test recovery without an approved maintenance window.
+
+---
+
+# Jump Desktop User Agent Recovery
+
+## Incident & Root Cause (2026-09-19)
+Following weekly 05:00 scheduled headless reboots, incoming Jump Desktop connections repeatedly failed with the root daemon (`/Library/LaunchDaemons/com.p5sys.jump.connect.service.plist`) looping indefinitely:
+
+```
+[rtc.dp.launch] Trying to launch agent for: 501, backgroundLoginsDisabled:false, anySession:false
+[rtc.dp.launch] User is already logged in, waiting for agent for: alejandro
+```
+
+### Root Cause
+- Vendor plist `/Library/LaunchAgents/com.p5sys.jump.connect.agent.plist` has `<key>RunAtLoad</key><false/>` and relies on a `com.apple.notifyd.matching` notification `com.p5sys.jump.connect.agent.launchd`.
+- On headless autologin, macOS `launchd` initializes `gui/501`, but does not automatically bootstrap `/Library/LaunchAgents/com.p5sys.jump.connect.agent.plist` into `gui/501`, or the notification is fired across domain boundaries before `gui/501` has subscribed.
+- The root daemon cannot launch the agent, causing remote access failure until manual `launchctl bootstrap` is executed.
+- Adding Jump Desktop to Login Items is prohibited because launching `Jump Desktop Connect.app` in GUI opens the interactive configuration window rather than running the background minimized daemon (`--minimized`).
+- Editing `/Library/LaunchAgents/com.p5sys.jump.connect.agent.plist` directly is prohibited because vendor app updates overwrite it.
+
+## Architecture
+Implemented a dedicated unprivileged user LaunchAgent in Alejandro's Aqua domain:
+- Plist: `~/Library/LaunchAgents/com.alejandro.jump-desktop-bootstrap.plist`
+- Script: `~/.local/bin/jump-desktop-recovery.py`
+- Test suite: `macos/scripts/tests/test_jump_desktop_recovery.py`
+
+### State Machine & Actions
+1. **Registered in domain** (`launchctl print gui/501/com.p5sys.jump.connect.agent` exit `0`):
+   - Returns `"healthy"`. Instant no-op, zero session disruption, zero interference with active or idle states.
+2. **Missing from domain** (exit != 0):
+   - Executes `launchctl bootstrap gui/501 /Library/LaunchAgents/com.p5sys.jump.connect.agent.plist`.
+   - Executes non-destructive `launchctl kickstart gui/501/com.p5sys.jump.connect.agent` (no `-k`) to spawn the agent immediately without waiting for transient notifications.
+   - Logs event to `~/.local/var/log/jump-desktop-recovery.log`.
