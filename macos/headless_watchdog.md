@@ -15,7 +15,9 @@ The upstream router reboots daily at 05:00 AM. When the physical Ethernet port p
   4. Cloudflared internal `/ready` metrics API (`readyConnections > 0`)
   5. Local web listener (`https://127.0.0.1:443`)
   6. Tailscale node responsiveness (`100.88.191.18:22`)
-  7. Local VM listeners (SSH 22, Web 443)
+  7. Local VM listener signals (diagnostic only; host forwarding sockets are not proof of VM health)
+
+OrbStack and `coolify-node` application recovery are authoritatively handled by the separate user LaunchAgent documented below. The root watchdog still contains its legacy listener-based fallback, but those host sockets are diagnostic signals and are not relied upon to prove VM health.
 
 ## Multi-Layer Recovery
 1. **Layer 1 (Interface Bounce - 5 min failure)**:
@@ -26,7 +28,7 @@ The upstream router reboots daily at 05:00 AM. When the physical Ethernet port p
    This triggers a fresh DHCP request and clears stale ARP routing state without rebooting.
 
 2. **Layer 2 (Service Restart - 10 min failure)**:
-   Restarts `com.cloudflare.cloudflared`, OrbStack (`orbctl restart`), or Tailscale if individual listeners stall while the host network is fine.
+   Restarts `com.cloudflare.cloudflared` or Tailscale if their individual probes fail while the host network is fine. The unprivileged user LaunchAgent below is the authoritative OrbStack recovery path.
 
 3. **Layer 3 (Host Reboot - 15 min sustained multi-witness outage)**:
    Initiates a graceful reboot (`shutdown -r +1`) if all probes fail for 3 consecutive cycles (15m).
@@ -37,7 +39,58 @@ The upstream router reboots daily at 05:00 AM. When the physical Ethernet port p
 - **Cooldown**: Minimum **30 minutes** post-reboot lockout before another reboot can be scheduled.
 
 ## Files
-- Script: `/usr/local/bin/headless-watchdog.py` (Source: `macos/scripts/headless-watchdog.py`)
-- Daemon: `/Library/LaunchDaemons/com.alejandro.headless-watchdog.plist` (Source: `macos/launchdaemons/com.alejandro.headless-watchdog.plist`)
-- State file: `/tmp/headless-watchdog-state.json`
-- Logs: `/var/log/headless-watchdog.log`
+- Root network watchdog: `/usr/local/bin/headless-watchdog.py` (source: `macos/scripts/headless-watchdog.py`)
+- Root watchdog daemon: `/Library/LaunchDaemons/com.alejandro.headless-watchdog.plist`
+- Root watchdog state: `/var/db/headless-watchdog/state.json`
+- Root watchdog logs: `/var/log/headless-watchdog.log`
+
+## OrbStack and Coolify VM Recovery
+
+OrbStack supports **Start at login**, not unattended startup without a user desktop session. The Mac mini uses automatic login, but the login item alone did not recover `coolify-node` during the 2026-09-19 incident. A dedicated unprivileged LaunchAgent therefore owns application-layer recovery in the `gui/501` Aqua session.
+
+### Incident: 2026-09-19
+
+- macOS rebooted normally at `05:00:31 ICT`.
+- UptimeRobot monitor `803068309` recorded `502 Bad Gateway` from `07:06:52` until `09:28:47 ICT`.
+- Total OmniRoute outage: `2h 21m 55s`.
+- OrbStack relaunched at `09:24:46`; `coolify-node`, Docker, and OmniRoute recovered afterward.
+- The old TCP probes were insufficient: macOS SSH and OrbStack forwarding sockets could remain open while the VM backend was unavailable.
+
+### Recovery Contract
+
+`com.alejandro.orbstack-recovery` runs every five minutes and at user-session load. It takes action only when the host gateway and public DNS are reachable.
+
+1. Check `orbctl status`.
+2. Check the `coolify-node` state from `orbctl list`.
+3. Probe OmniRoute through the local SNI route at `https://9router.akbal.dev/api/health` and require JSON `status=ok`.
+4. Launch OrbStack when its daemon is unavailable.
+5. Start `coolify-node` when stopped.
+6. Restart `coolify-node` only after two consecutive failed L7 probes while the VM reports `running`.
+7. Enforce a ten-minute action cooldown and never reboot the Mac.
+
+### Installation
+
+```bash
+install -d "$HOME/.local/bin" "$HOME/.local/var/log" \
+  "$HOME/.local/var/run" "$HOME/.local/var/lib/orbstack-recovery" \
+  "$HOME/Library/LaunchAgents"
+install -m 0755 macos/scripts/orbstack-recovery.py \
+  "$HOME/.local/bin/orbstack-recovery.py"
+install -m 0644 macos/launchagents/com.alejandro.orbstack-recovery.plist \
+  "$HOME/Library/LaunchAgents/com.alejandro.orbstack-recovery.plist"
+launchctl bootout "gui/$(id -u)/com.alejandro.orbstack-recovery" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" \
+  "$HOME/Library/LaunchAgents/com.alejandro.orbstack-recovery.plist"
+```
+
+### Verification
+
+```bash
+launchctl print "gui/$(id -u)/com.alejandro.orbstack-recovery"
+python3 "$HOME/.local/bin/orbstack-recovery.py"
+tail -n 20 "$HOME/.local/var/log/orbstack-recovery.log"
+curl -sk --resolve 9router.akbal.dev:443:127.0.0.1 \
+  https://9router.akbal.dev/api/health
+```
+
+The expected healthy result is `{"result": "healthy"}` with no launch, start, or restart action in the recovery log. Do not stop the live VM merely to test recovery without an approved maintenance window.
