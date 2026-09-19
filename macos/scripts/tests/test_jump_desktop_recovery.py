@@ -3,7 +3,7 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "jump-desktop-recovery.py"
 SPEC = importlib.util.spec_from_file_location("jump_desktop_recovery", MODULE_PATH)
@@ -21,10 +21,13 @@ class TestJumpDesktopRecovery(unittest.TestCase):
         self.patch_log_file = patch.object(
             MODULE, "LOG_FILE", Path(self.tmpdir.name) / "log/test.log"
         )
+        self.patch_print = patch("builtins.print")
         self.patch_log_dir.start()
         self.patch_log_file.start()
+        self.patch_print.start()
 
     def tearDown(self):
+        self.patch_print.stop()
         self.patch_log_file.stop()
         self.patch_log_dir.stop()
         self.tmpdir.cleanup()
@@ -72,23 +75,51 @@ class TestJumpDesktopRecovery(unittest.TestCase):
 
     @patch("subprocess.run")
     @patch("pathlib.Path.exists")
-    def test_bootstrap_agent_invokes_launchctl_bootstrap(
+    def test_bootstrap_agent_invokes_launchctl_bootstrap_and_kickstart(
         self, mock_exists, mock_subproc
     ):
         mock_exists.return_value = True
         mock_subproc.return_value = MagicMock(returncode=0)
         self.assertTrue(MODULE.bootstrap_agent("gui/501"))
-        mock_subproc.assert_called_once_with(
-            [
-                "/bin/launchctl",
-                "bootstrap",
-                "gui/501",
-                "/Library/LaunchAgents/com.p5sys.jump.connect.agent.plist",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=10,
+        self.assertEqual(mock_subproc.call_count, 2)
+        mock_subproc.assert_has_calls([
+            call(
+                [
+                    "/bin/launchctl",
+                    "bootstrap",
+                    "gui/501",
+                    "/Library/LaunchAgents/com.p5sys.jump.connect.agent.plist",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            ),
+            call(
+                [
+                    "/bin/launchctl",
+                    "kickstart",
+                    "gui/501/com.p5sys.jump.connect.agent",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            ),
+        ])
+
+    @patch.object(MODULE, "is_agent_loaded")
+    @patch("subprocess.run")
+    @patch("pathlib.Path.exists")
+    def test_bootstrap_recovers_on_launchd_error_if_service_loaded(
+        self, mock_exists, mock_subproc, mock_is_loaded
+    ):
+        mock_exists.return_value = True
+        mock_subproc.return_value = MagicMock(
+            returncode=5, stderr="Bootstrap failed: 5: Input/output error"
         )
+        mock_is_loaded.return_value = True
+
+        self.assertTrue(MODULE.bootstrap_agent("gui/501"))
+        mock_is_loaded.assert_called_once_with("gui/501")
 
 
 if __name__ == "__main__":
