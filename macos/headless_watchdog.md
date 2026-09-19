@@ -127,3 +127,25 @@ Implemented a dedicated unprivileged user LaunchAgent in Alejandro's Aqua domain
    - Executes `launchctl bootstrap gui/501 /Library/LaunchAgents/com.p5sys.jump.connect.agent.plist`.
    - Executes non-destructive `launchctl kickstart gui/501/com.p5sys.jump.connect.agent` (no `-k`) to spawn the agent immediately without waiting for transient notifications.
    - Logs event to `~/.local/var/log/jump-desktop-recovery.log`.
+
+### Installation
+
+```bash
+install -d "$HOME/.local/bin" "$HOME/.local/var/log" "$HOME/Library/LaunchAgents"
+install -m 0755 macos/scripts/jump-desktop-recovery.py "$HOME/.local/bin/jump-desktop-recovery.py"
+install -m 0644 macos/launchagents/com.alejandro.jump-desktop-bootstrap.plist \
+  "$HOME/Library/LaunchAgents/com.alejandro.jump-desktop-bootstrap.plist"
+launchctl bootout "gui/$(id -u)/com.alejandro.jump-desktop-bootstrap" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" \
+  "$HOME/Library/LaunchAgents/com.alejandro.jump-desktop-bootstrap.plist"
+```
+
+### Verification
+
+```bash
+launchctl print "gui/$(id -u)/com.alejandro.jump-desktop-bootstrap"
+python3 "$HOME/.local/bin/jump-desktop-recovery.py"
+tail -n 20 "$HOME/.local/var/log/jump-desktop-recovery.log"
+```
+
+The expected healthy result is `OK com.p5sys.jump.connect.agent is loaded in gui/501` without re-bootstrapping or spawning duplicate processes.
