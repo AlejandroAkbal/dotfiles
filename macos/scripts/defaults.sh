@@ -40,14 +40,15 @@ install_user_agent() {
 }
 
 install_system_daemon() {
-  local source_daemon="$repo_dir/launchdaemons/com.alejandro.daily-softwareupdate.plist"
-  local daemon="/Library/LaunchDaemons/com.alejandro.daily-softwareupdate.plist"
+  local label="$1"
+  local source_daemon="${2:-$repo_dir/launchdaemons/$label.plist}"
+  local daemon="/Library/LaunchDaemons/$label.plist"
 
   if ! cmp -s "$source_daemon" "$daemon"; then
     sudo install -m 644 "$source_daemon" "$daemon"
   fi
   sudo chown root:wheel "$daemon"
-  sudo launchctl bootout system/com.alejandro.daily-softwareupdate &>/dev/null || true
+  sudo launchctl bootout "system/$label" &>/dev/null || true
   sudo launchctl bootstrap system "$daemon"
 }
 
@@ -66,7 +67,8 @@ install_ssh_policy() {
 
 install_user_agent com.alejandro.weekly-maintenance
 install_user_agent com.alejandro.mac-mini-backup "$repo_dir/launchagents/com.alejandro.mac-mini-backup.plist"
-install_system_daemon
+install_system_daemon com.alejandro.daily-softwareupdate
+install_system_daemon com.alejandro.restart
 install_ssh_policy
 
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
