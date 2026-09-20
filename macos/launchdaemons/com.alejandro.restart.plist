@@ -3,19 +3,21 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.alejandro.weekly-maintenance</string>
+  <string>com.alejandro.restart</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/zsh</string>
-    <string>-lc</string>
-    <string>exec "$HOME/.local/bin/mac-mini-maintenance"</string>
+    <string>/sbin/shutdown</string>
+    <string>-r</string>
+    <string>now</string>
   </array>
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
-    <integer>7</integer>
+    <integer>8</integer>
     <key>Minute</key>
-    <integer>0</integer>
+    <integer>15</integer>
   </dict>
+  <key>RunAtLoad</key>
+  <false/>
 </dict>
 </plist>

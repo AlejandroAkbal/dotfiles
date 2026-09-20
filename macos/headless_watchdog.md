@@ -149,3 +149,18 @@ tail -n 20 "$HOME/.local/var/log/jump-desktop-recovery.log"
 ```
 
 The expected healthy result is `OK com.p5sys.jump.connect.agent is loaded in gui/501` without re-bootstrapping or spawning duplicate processes.
+
+---
+
+# Automated Nightly Maintenance Schedule (UTC)
+
+To prevent resource collisions (such as Coolify Docker prune running concurrently with SQLite volume backups), all recurring host and container lifecycle tasks are aligned to a sequential, non-overlapping maintenance pipeline during the quietest global traffic window (**23:15–01:30 UTC**):
+
+| UTC Time | Local Time (ICT) | Component | Action | Description |
+|---|---|---|---|---|
+| **23:15** | **06:15** | Host & Coolify | **Pre-Update Snapshots** | Coolify Volume Backup (`omniroute-data`) + Host Restic backup (`mac-mini-backup`). Takes clean snapshots before any updates begin. |
+| **00:00** | **07:00** | Mac Mini Host | **OS & Package Updates** | `softwareupdate --install --all` + Homebrew (`brew upgrade`) + Hermes Agent. Staged packages ready. |
+| **00:30** | **07:30** | OrbStack VM | **Docker Updates** | Watchtower runs exactly 30m after OS updates start. Pulls updated container images and recreates services. |
+| **00:50** | **07:50** | Coolify Server | **Docker Cleanup** | Server Docker cleanup (`50 0 * * *` UTC). Prunes stale images discarded by Watchtower. No containers are stopped. |
+| **01:15** | **08:15** | Mac Mini Host | **Host Reboot** | `shutdown -r now` (`com.alejandro.restart.plist`). Applies staged macOS updates, restarts all LaunchDaemons and VM fresh. |
+| **01:30** | **08:30** | Mac Mini Host | **Post-Boot Verification** | Recovery agents verify L7 health; summary digest sent to Command Center topic 3. |
