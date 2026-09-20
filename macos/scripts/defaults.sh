@@ -76,7 +76,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
 
 pmset -g custom | grep -q 'autorestart *1' || sudo systemsetup -setrestartpowerfailure on
 sudo pmset -g custom | grep -Eq '^[[:space:]]*sleep[[:space:]]+0$' || sudo pmset -a sleep 0
-# Periodic restart is owned by the native Codex date-gated task, not pmset.
+# Periodic restart is owned by com.alejandro.restart LaunchDaemon (08:15 ICT / 01:15 UTC), not pmset.
 sudo pmset repeat cancel
 networksetup -listallnetworkservices | sed '1d;/^\*/d' | while IFS= read -r service; do
   networksetup -getinfo "$service" | grep -q '^IPv6: Off$' || sudo networksetup -setv6off "$service"
