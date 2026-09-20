@@ -1,24 +1,19 @@
 # Periodic Mac mini restart
 
-The Mac mini does not use a `pmset` periodic restart or a system LaunchDaemon.
-The active setup uses a native Codex Scheduled Task:
+The Mac mini uses a dedicated system LaunchDaemon to execute an automated daily reboot as the final stage of the nightly maintenance pipeline:
 
-- Schedule: daily at 03:00.
-- Script: `~/.codex/scripts/restart-every-3-days.sh`.
-- The script date-gates the restart to every third day.
-- Restart action: macOS `System Events`, not `sudo` or `shutdown`.
+- **LaunchDaemon:** `/Library/LaunchDaemons/com.alejandro.restart.plist`
+- **Schedule:** Daily at `08:15 ICT` (`01:15 UTC`).
+- **Action:** `/sbin/shutdown -r now`
+- **Managed by:** `defaults.sh` (`install_system_daemon com.alejandro.restart`)
 
-Keep the scheduler and date gate together. Do not add a second `pmset` or
-LaunchAgent restart path. Verify with:
+`pmset` repeating schedules are cancelled (`sudo pmset repeat cancel`) to avoid duplicate reboot ownership.
+
+Verify the loaded daemon with:
 
 ```bash
+sudo launchctl print system/com.alejandro.restart
 pmset -g sched
-open -a ChatGPT
 ```
 
-`pmset -g sched` should not show a repeating restart or wake entry. ChatGPT's
-Scheduled list should show the active daily `03:00` Codex task.
-
-To change or remove the schedule, edit or disable the existing native Codex
-task. Do not recreate it without first checking for the existing task, because
-duplicate restart owners can cause unexpected reboots.
+`pmset -g sched` should show no active repeating restart or wake entries. `launchctl` should show `com.alejandro.restart` active with `StartCalendarInterval = { Hour = 8; Minute = 15; }`.

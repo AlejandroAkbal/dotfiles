@@ -158,9 +158,10 @@ To prevent resource collisions (such as Coolify Docker prune running concurrentl
 
 | UTC Time | Local Time (ICT) | Component | Action | Description |
 |---|---|---|---|---|
-| **23:15** | **06:15** | Host & Coolify | **Pre-Update Snapshots** | Coolify Volume Backup (`omniroute-data`) + Host Restic backup (`mac-mini-backup`). Takes clean snapshots before any updates begin. |
-| **00:00** | **07:00** | Mac Mini Host | **OS & Package Updates** | `softwareupdate --install --all` + Homebrew (`brew upgrade`) + Hermes Agent. Staged packages ready. |
-| **00:30** | **07:30** | OrbStack VM | **Docker Updates** | Watchtower runs exactly 30m after OS updates start. Pulls updated container images and recreates services. |
+| **23:15** | **06:15** | Host & Coolify | **Pre-Update Snapshots** | Coolify volume/DB backups (`omniroute-data` etc.) + Host Restic backup (`mac-mini-backup`). Takes clean snapshots before any updates begin. |
+| **00:00** | **07:00** | Mac Mini Host | **OS Updates** | `softwareupdate --install --all` via `com.alejandro.daily-softwareupdate`. |
+| **00:15** | **07:15** | Mac Mini Host | **Package Updates** | Homebrew (`brew upgrade`), Hermes Agent, and MAS checks via `com.alejandro.weekly-maintenance`. De-raced from OS updates. |
+| **00:30** | **07:30** | OrbStack VM | **Docker Updates** | Watchtower runs across the fleet. Pulls updated container images and recreates services. |
 | **00:50** | **07:50** | Coolify Server | **Docker Cleanup** | Server Docker cleanup (`50 0 * * *` UTC). Prunes stale images discarded by Watchtower. No containers are stopped. |
 | **01:15** | **08:15** | Mac Mini Host | **Host Reboot** | `shutdown -r now` (`com.alejandro.restart.plist`). Applies staged macOS updates, restarts all LaunchDaemons and VM fresh. |
-| **01:30** | **08:30** | Mac Mini Host | **Post-Boot Verification** | Recovery agents verify L7 health; summary digest sent to Command Center topic 3. |
+| **01:30** | **08:30** | Mac Mini Host | **Post-Boot Watchdog** | `com.alejandro.orbstack-recovery` recovers VM on boot; Hermes cron `mac-mini-backup-watchdog.py` verifies backup completion at 08:30 ICT. |
