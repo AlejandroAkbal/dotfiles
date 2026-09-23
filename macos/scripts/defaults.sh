@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "$(id -u)" -eq 0 ]]; then
+  printf 'Error: defaults.sh must be run as your normal user (without sudo).\nPrivileged tasks will prompt for sudo when needed.\n\nUsage:\n  bash %s\n' "$0" >&2
+  exit 1
+fi
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd "$script_dir/.." && pwd)"
 
