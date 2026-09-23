@@ -38,9 +38,14 @@ if [ ! -d /data/coolify ] && [ -d /home/persist/data/coolify ]; then
     cp -a /home/persist/data/coolify /data/
 fi
 
-echo "[6/10] Restoring SSH authorized_keys..."
-echo "[*] Restoring Dropbear config (key-only auth)..."
-cp /home/persist/etc/dropbear /etc/default/dropbear 2>/dev/null || true
+echo "[6/10] Restoring SSH host keys, Dropbear config, and authorized_keys..."
+mkdir -p /etc/dropbear /etc/default
+cp -f /home/persist/etc/dropbear /etc/default/dropbear 2>/dev/null || true
+if [ -d /home/persist/etc/dropbear_keys ]; then
+    cp -p /home/persist/etc/dropbear_keys/* /etc/dropbear/ 2>/dev/null || true
+    chmod 700 /etc/dropbear
+    chmod 600 /etc/dropbear/*
+fi
 mkdir -p /root/.ssh /home/root/.ssh
 chmod 700 /root/.ssh /home/root/.ssh
 if [ -f /home/root/.ssh/authorized_keys ]; then
