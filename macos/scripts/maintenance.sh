@@ -50,7 +50,7 @@ record_matches() {
   local output="$1"
   local pattern="$2"
   local matches
-  matches="$(grep -E "$pattern" "$output" 2>/dev/null || true)"
+  matches="$(grep -E "$pattern" "$output" 2>/dev/null | awk '!seen[$0]++' || true)"
   if [[ -n "$matches" ]]; then
     while IFS= read -r line; do
       printf '  %s\n' "$line" >>"$report"
@@ -78,10 +78,28 @@ if [[ -n "$brew_bin" ]]; then
     record_matches "$brew_formula" '(^==> Upgraded| -> )'
     important=1
   fi
-  if ! run_capture 'Homebrew cask upgrades' "$brew_cask" "$brew_bin" upgrade --cask --greedy-auto-updates --yes; then
-    append_report 'Homebrew application upgrade failed.'
-    failed=1
-    important=1
+  outdated_casks_raw="$("$brew_bin" outdated --cask --greedy-auto-updates --quiet 2>/dev/null || true)"
+  upgradeable_casks=()
+  while IFS= read -r c; do
+    [[ -z "$c" ]] && continue
+    case "$c" in
+      jump-desktop-connect|tailscale-app)
+        # Skip unattended upgrades for casks requiring interactive sudo authentication
+        ;;
+      *)
+        upgradeable_casks+=("$c")
+        ;;
+    esac
+  done <<<"$outdated_casks_raw"
+
+  if (( ${#upgradeable_casks[@]} > 0 )); then
+    if ! run_capture 'Homebrew cask upgrades' "$brew_cask" "$brew_bin" upgrade --cask --yes "${upgradeable_casks[@]}"; then
+      append_report 'Homebrew application upgrade failed.'
+      failed=1
+      important=1
+    fi
+  else
+    : >"$brew_cask"
   fi
   if grep -Eq '(^==> Upgraded| -> )' "$brew_cask"; then
     append_report 'Homebrew applications changed:'
@@ -100,12 +118,15 @@ if launchctl print system/com.alejandro.daily-softwareupdate >"$system_daemon" 2
   if grep -q 'state = running' "$system_daemon"; then
     append_report 'macOS system update job is still running; installation may require a restart or owner authentication.'
     important=1
-  fi
-  if grep -Eq 'last exit code = [1-9]' "$system_daemon"; then
-    append_report 'Important: the privileged macOS update job last exited unsuccessfully:'
-    record_matches "$system_daemon" 'last exit code = .*'
-    failed=1
-    important=1
+  elif grep -Eq 'last exit code = [1-9]' "$system_daemon"; then
+    if [[ -f /var/log/alejandro-softwareupdate.log ]] && tail -50 /var/log/alejandro-softwareupdate.log | grep -q 'Failed to authenticate'; then
+      : # Handled below by system update log check
+    else
+      append_report 'Important: the privileged macOS update job last exited unsuccessfully:'
+      record_matches "$system_daemon" 'last exit code = .*'
+      failed=1
+      important=1
+    fi
   fi
 else
   append_report 'Important: the privileged macOS update LaunchDaemon is not loaded.'
@@ -116,9 +137,14 @@ system_log="$tmp_dir/system-update-log.txt"
 if [[ -f /var/log/alejandro-softwareupdate.log ]]; then
   tail -50 /var/log/alejandro-softwareupdate.log >"$system_log"
   if grep -Eq 'Downloaded:|Failed to authenticate|Failed to install|Install failed' "$system_log"; then
-    append_report 'Important: the macOS system updater recorded a download/install issue:'
-    record_matches "$system_log" 'Downloaded:|Failed to authenticate|Failed to install|Install failed'
-    failed=1
+    if grep -q 'Failed to authenticate' "$system_log"; then
+      append_report 'macOS system update is ready to install (requires password in System Settings → Software Update):'
+      record_matches "$system_log" 'Downloaded:.*'
+    else
+      append_report 'Important: the macOS system updater recorded a download/install issue:'
+      record_matches "$system_log" 'Downloaded:|Failed to install|Install failed'
+      failed=1
+    fi
     important=1
   fi
 fi
