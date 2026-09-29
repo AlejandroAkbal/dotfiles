@@ -17,9 +17,13 @@ echo "=== [1/5] Checking Host Router (${ROUTER_IP}) ==="
 if ping -c 1 -W 2 "${ROUTER_IP}" >/dev/null 2>&1; then
     echo "  [+] Router is reachable via ICMP."
     ssh ${SSH_OPTS} "admin@${ROUTER_IP}" "
-        echo '  [*] Verifying NVRAM DNS & DHCP settings...'
+        echo '  [*] Verifying NVRAM DNS & DHCP settings (NextDNS via stubby DoT)...'
         NVRAM_CHANGED=0
-        for pair in 'dhcp_dns1_x ${BOARD_IP}' 'dhcp_dns2_x ${HETZNER_MASTER}' 'wan_dns1_x ${BOARD_IP}' 'wan_dns2_x ${HETZNER_MASTER}' 'wan_dnsenable_x 0' 'misc_http_x 0' 'sshd_pass 0'; do
+        # Retired: AdGuard replica (${BOARD_IP}) / Hetzner master (${HETZNER_MASTER}) as resolvers. The
+        # router's own dnsmasq -> stubby DoT (127.0.1.1) is the resolver now, and LAN clients must use
+        # the router itself, so dhcp_dns1_x/dhcp_dns2_x have to stay EMPTY. Never re-assert the old pair:
+        # doing so hands clients dead resolvers and blackholes DNS.
+        for pair in 'wan_dns1_x 127.0.1.1' 'wan_dns 127.0.1.1' 'wan_dnsenable_x 0' 'misc_http_x 0' 'sshd_pass 0'; do
             set -- \$pair
             CURR=\$(nvram get \$1 2>/dev/null || true)
             if [ \"\$CURR\" != \"\$2\" ]; then
@@ -28,11 +32,29 @@ if ping -c 1 -W 2 "${ROUTER_IP}" >/dev/null 2>&1; then
                 NVRAM_CHANGED=1
             fi
         done
-        CURR_WAN_DNS=\$(nvram get wan_dns 2>/dev/null || true)
-        if [ \"\$CURR_WAN_DNS\" != \"${BOARD_IP} ${HETZNER_MASTER}\" ]; then
-            echo \"  [!] Correcting wan_dns: '\$CURR_WAN_DNS' -> '${BOARD_IP} ${HETZNER_MASTER}'\"
-            nvram set wan_dns=\"${BOARD_IP} ${HETZNER_MASTER}\"
-            NVRAM_CHANGED=1
+        for v in dhcp_dns1_x dhcp_dns2_x wan_dns2_x; do
+            CURR=\$(nvram get \$v 2>/dev/null || true)
+            if [ -n \"\$CURR\" ]; then
+                echo \"  [!] Clearing \$v: '\$CURR' -> ''\"
+                nvram set \$v=\"\"
+                NVRAM_CHANGED=1
+            fi
+        done
+        echo '  [*] Verifying Wi-Fi stability settings (fixed channels, no runtime ACS)...'
+        WIFI_CHANGED=0
+        for pair in 'wl0_chanspec 6' 'wl1_chanspec 149/80' 'wl0_acs_boot_only 1' 'wl1_acs_boot_only 1' 'wl2_acs_boot_only 1'; do
+            set -- \$pair
+            CURR=\$(nvram get \$1 2>/dev/null || true)
+            if [ \"\$CURR\" != \"\$2\" ]; then
+                echo \"  [!] Correcting \$1: '\$CURR' -> '\$2'\"
+                nvram set \$1=\"\$2\"
+                WIFI_CHANGED=1
+            fi
+        done
+        if [ \$WIFI_CHANGED -eq 1 ]; then
+            echo '  [*] Committing NVRAM and restarting wireless (Wi-Fi drops ~30s)...'
+            nvram commit
+            service restart_wireless >/dev/null 2>&1 || true
         fi
         if [ \$NVRAM_CHANGED -eq 1 ]; then
             echo '  [*] Committing NVRAM and restarting services...'
@@ -63,13 +85,13 @@ else
     echo "  [-] ERROR: Daughterboard ${BOARD_IP} is unreachable!"
 fi
 
-echo "=== [3/5] Testing DNS Resolution & Failover ==="
-echo -n "  [*] Daughterboard AdGuard (${BOARD_IP}): "
-dig @${BOARD_IP} +short +time=3 +tries=2 cloudflare.com | head -n 1 || echo "FAILED"
-echo -n "  [*] Hetzner Master AdGuard (${HETZNER_MASTER}): "
-dig @${HETZNER_MASTER} +short +time=3 +tries=2 cloudflare.com | head -n 1 || echo "FAILED"
+echo "=== [3/5] Testing DNS Resolution (router dnsmasq -> stubby DoT -> NextDNS) ==="
 echo -n "  [*] Router dnsmasq (${ROUTER_IP}): "
 dig @${ROUTER_IP} +short +time=3 +tries=2 cloudflare.com | head -n 1 || echo "FAILED"
+echo -n "  [*] Router stubby DoT listener (127.0.1.1): "
+ssh ${SSH_OPTS} "admin@${ROUTER_IP}" "nslookup cloudflare.com 127.0.1.1 2>/dev/null | sed -n 's/^Address [0-9]*: //p' | tail -n 1"
+echo -n "  [*] Stubby DoT upstream profile: "
+ssh ${SSH_OPTS} "admin@${ROUTER_IP}" "grep -o '[a-z0-9]*\.dns\.nextdns\.io' /etc/stubby/stubby-0.yml | head -n 1"
 
 echo "=== [4/5] Testing SingBox Proxy Egress via Tailscale ==="
 if ssh hetzner-de-1 "curl -s -x http://${SINGBOX_AUTH}@${SINGBOX_IP}:1080 --connect-timeout 5 https://ifconfig.me" > /tmp/singbox_out 2>/dev/null; then

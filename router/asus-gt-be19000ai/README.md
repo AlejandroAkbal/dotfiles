@@ -84,9 +84,11 @@ Coolify requires three distinct prerequisites to manage a Linux host:
 
 ## 5. DNS Redundancy & Synchronization
 
-- **LAN Primary Resolver:** `192.168.50.88` (AdGuard Home replica on AI daughterboard).
-- **WAN Secondary Failover:** `91.107.213.51` (AdGuard Home master on Hetzner).
-- **Host Router NVRAM:** Configured with `dhcp_dns1_x=192.168.50.88` and `dhcp_dns2_x=91.107.213.51`.
+> **Superseded (Sep 2026):** the AdGuard replica/master pair below is **retired** — AdGuard is stopped and the fleet resolver is NextDNS profile `f45e8d` over DoT. Current router state: `wan_dns=127.0.1.1`, `wan_dns1_x=127.0.1.1`, `wan_dns2_x`/`dhcp_dns1_x`/`dhcp_dns2_x` **empty**, so LAN clients resolve through the router's own dnsmasq -> stubby DoT. Never re-assert the AdGuard values: clients get dead resolvers and DNS blackholes (this happened once via a stale `asus-dr.sh` run). `scripts/asus-dr.sh` now asserts the NextDNS values instead.
+
+- **LAN Primary Resolver (retired):** `192.168.50.88` (AdGuard Home replica on AI daughterboard).
+- **WAN Secondary Failover (retired):** `91.107.213.51` (AdGuard Home master on Hetzner).
+- **Host Router NVRAM (retired values):** was `dhcp_dns1_x=192.168.50.88`, `dhcp_dns2_x=91.107.213.51`.
 - **Systemd-Resolved Conflict:** Disabled via `/etc/systemd/resolved.conf.d/adguardhome.conf` setting `DNSStubListener=no`.
 - **Sync Architecture:** `adguardhome-sync` runs hourly on Hetzner, synchronizing all blocklists, whitelists, user rules, and services from Master to Edge.
 
@@ -121,3 +123,39 @@ If the daughterboard eMMC partition table is completely corrupt:
    /usr/sbin/webs_ai_rescue.sh > /ai/log/rescue_direct.log 2>&1 &
    ```
 3. Once reflashed, access Portainer on `https://192.168.50.88:9443`, spawn a privileged container mounting `/` to `/host`, inject SSH keys into `/host/home/root/.ssh/authorized_keys`, and execute `/home/persist/restore.sh`.
+
+---
+
+## 8. Wi-Fi Wedge (Runtime ACS) Incident & Mitigation
+
+**Symptom (2026-09-29 20:26:15 ICT):** every Wi-Fi client on all three radios is deauthenticated in one burst and nothing can rejoin afterwards (`assoclist` empty on `wl0`/`wl1`/`wl2`). Wired LAN/WAN, DNS, SSH and the AI daughterboard stay healthy — the router only *looks* dead to Wi-Fi devices.
+
+**Signature in `/jffs/syslog.log`** (`/tmp/syslog.log` is a symlink to it, so the pre-crash tail survives reboots and power cuts):
+- `kernel: Error wl_cfg80211_get_freq -16` at the same second as a broadcast deauth (`FF:FF:FF:FF:FF:FF`) on every BSS
+- repeating `CFG80211-ERROR) wl_cfg80211_sta_info : GET STA INFO failed, -21`
+- `acsd: acs_scan_timer_or_dfsr_check(1604): wlX: cs scan failed (ret=-22)`
+- `acsd: wl0: txop channel select: Performing CSA on chspec 0x100X` — the runtime auto-channel-selection decision that arms it
+
+**Root cause:** the Broadcom `wl`/`cfg80211` driver wedges while `acsd` performs runtime auto channel selection (all radios shipped on Auto: `wl*_chanspec=0`, `wl*_acs_boot_only=0`). The `-16/-21/-22` error classes recur roughly daily; the full wedge occurred once in 5 days of retained logs.
+
+**Recovery (verified, 2026-09-29):** the router did not shut down cleanly — no `REBOOT: soft-reboot` line appears before the boot banner. The Shelly Plug M Gen3 watchdog cut power for 15 s:
+```sh
+# last watchdog power-cycle: reason, count, timestamp
+curl --digest -u admin:$PASS 'http://192.168.50.60/rpc/KVS.Get?key=watchdog_last_reboot'
+# -> {"reason":"WIFI_DISCONNECTED_PERSISTENT","reboot_count":1,...}
+```
+`wifiFailThreshold: 15` minutes of lost Wi-Fi is what fired — the plug's only path to the world is the Wi-Fi that died. Router back online 20:44:22 (~3 min).
+
+**Mitigation (runtime channel switching removed):**
+```sh
+nvram set wl0_chanspec=6        # 2.4 GHz fixed ch 6 / 20 MHz (auto was flapping 2 -> 7 -> 3)
+nvram set wl1_chanspec=149/80   # 5 GHz fixed ch 149 / 80 MHz, non-DFS (no radar-forced CSA)
+nvram set wl0_acs_boot_only=1
+nvram set wl1_acs_boot_only=1
+nvram set wl2_acs_boot_only=1   # 6 GHz stays on auto, but boot-only
+nvram commit && service restart_wireless
+```
+Verify: `wl -i wl0 chanspec` → `6 (0x1006)`, `wl -i wl1 chanspec` → `149/80 (0xe09b)`, and `grep -cE "Performing CSA|txop channel select" /jffs/syslog.log` stays flat after boot. Revert by setting the chanspecs back to `0` and `wl*_acs_boot_only=0`, then commit + `service restart_wireless`. `scripts/asus-dr.sh` re-asserts these values on every run.
+
+**Still open:** firmware `3.0.0.6.102_40717` (2026/08/18) → `3.0.0.6.102_40770` (2026/09/23), whose notes include a fix to the wireless channel-selection command handling plus Wi-Fi stability improvements. The router's own update check reports nothing pending (`webs_state_flag=0`), so it needs a manual flash from the ROG support page.
+
