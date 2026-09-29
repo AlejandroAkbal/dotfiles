@@ -10,12 +10,33 @@ ROUTER_IP="${ROUTER_IP:-192.168.50.1}"
 BOARD_IP="${BOARD_IP:-192.168.50.88}"
 HETZNER_MASTER="${HETZNER_MASTER:-91.107.213.51}"
 SHELLY_IP="${SHELLY_IP:-192.168.50.60}"
-SINGBOX_AUTH="${SINGBOX_AUTH:-router_user:SecurePassword123}"
 SINGBOX_IP="${SINGBOX_IP:-100.95.204.62}"
 
+# TCP reachability probe. On macOS `ping -W` is MILLISECONDS, not seconds, so the old
+# `ping -c 1 -W 2` gates were really "give up after 2ms" and reported every LAN peer as
+# dead. /dev/tcp is a bash builtin and needs no extra dependency, so use it as the gate
+# for the services this script actually talks to over TCP (SSH/RPC), not ICMP.
+tcp_probe() {
+    local host="$1" port="$2"
+    (exec 3<>"/dev/tcp/${host}/${port}") >/dev/null 2>&1
+}
+
+SINGBOX_AUTH=""
+if [ -n "${SINGBOX_AUTH_OVERRIDE:-}" ]; then
+    SINGBOX_AUTH="${SINGBOX_AUTH_OVERRIDE}"
+elif [ -n "${SINGBOX_AUTH_FILE:-}" ] && [ -r "${SINGBOX_AUTH_FILE}" ]; then
+    SINGBOX_AUTH="$(head -n 1 "${SINGBOX_AUTH_FILE}")"
+elif [ -f "${HOME}/.hermes/.env" ] && grep -q '^SINGBOX_AUTH=' "${HOME}/.hermes/.env" 2>/dev/null; then
+    SINGBOX_AUTH="$(sed -n 's/^SINGBOX_AUTH=//p' "${HOME}/.hermes/.env" | head -n 1)"
+fi
+if [ -z "${SINGBOX_AUTH}" ]; then
+    echo "  [!] WARNING: sing-box credentials not found (set SINGBOX_AUTH_OVERRIDE, SINGBOX_AUTH_FILE," >&2
+    echo "      or SINGBOX_AUTH= in ${HOME}/.hermes/.env). Step [4/5] will be skipped." >&2
+fi
+
 echo "=== [1/5] Checking Host Router (${ROUTER_IP}) ==="
-if ping -c 1 -W 2 "${ROUTER_IP}" >/dev/null 2>&1; then
-    echo "  [+] Router is reachable via ICMP."
+if tcp_probe "${ROUTER_IP}" 22 || ping -c 1 -W 2000 "${ROUTER_IP}" >/dev/null 2>&1; then
+    echo "  [+] Router is reachable."
     ssh ${SSH_OPTS} "admin@${ROUTER_IP}" "
         echo '  [*] Verifying NVRAM DNS & DHCP settings (NextDNS via stubby DoT)...'
         NVRAM_CHANGED=0
@@ -73,8 +94,10 @@ else
 fi
 
 echo "=== [2/5] Checking AI Daughterboard (${BOARD_IP}) ==="
-if ping -c 1 -W 2 "${BOARD_IP}" >/dev/null 2>&1; then
-    echo "  [+] Daughterboard is reachable via ICMP."
+# The board does not always answer ICMP even when SSH works fine, and this step needs
+# SSH anyway. Gate on TCP/22 so restore.sh actually runs instead of being skipped.
+if tcp_probe "${BOARD_IP}" 22; then
+    echo "  [+] Daughterboard is reachable (TCP/22)."
     ssh ${SSH_OPTS} "root@${BOARD_IP}" "
         if [ -x /home/persist/restore.sh ]; then
             echo '  [*] Running /home/persist/restore.sh...'
@@ -97,7 +120,9 @@ echo -n "  [*] Stubby DoT upstream profile: "
 ssh ${SSH_OPTS} "admin@${ROUTER_IP}" "grep -o '[a-z0-9]*\.dns\.nextdns\.io' /etc/stubby/stubby-0.yml | head -n 1"
 
 echo "=== [4/5] Testing SingBox Proxy Egress via Tailscale ==="
-if ssh hetzner-de-1 "curl -s -x http://${SINGBOX_AUTH}@${SINGBOX_IP}:1080 --connect-timeout 5 https://ifconfig.me" > /tmp/singbox_out 2>/dev/null; then
+if [ -z "${SINGBOX_AUTH}" ]; then
+    echo "  [*] SKIPPED: no sing-box credentials available."
+elif ssh hetzner-de-1 "curl -s -x http://${SINGBOX_AUTH}@${SINGBOX_IP}:1080 --connect-timeout 5 https://ifconfig.me" > /tmp/singbox_out 2>/dev/null && [ -s /tmp/singbox_out ]; then
     echo "  [+] Egress successful via IP: $(cat /tmp/singbox_out)"
 else
     echo "  [-] ERROR: SingBox egress test failed."
@@ -105,10 +130,30 @@ fi
 rm -f /tmp/singbox_out
 
 echo "=== [5/5] Checking Shelly Watchdog (${SHELLY_IP}) ==="
-if [ -f "${HOME}/.hermes/scripts/shelly-rpc.py" ]; then
-    python3 "${HOME}/.hermes/scripts/shelly-rpc.py" Switch.GetStatus '{"id": 0}' 2>/dev/null | jq -r '"  [+] Shelly Relay: output=" + (.output|tostring) + ", power=" + (.apower|tostring) + "W"' || echo "  [*] Shelly probe returned no data."
+# NOTE: this step must not use python3. macOS treats each binary as a separate app for
+# Local Network privacy, and the system python here is denied, so urllib fails with
+# "No route to host" on every LAN peer while curl/ssh work fine on the same host at the
+# same moment. curl --digest is therefore the transport: it does the same SHA-256 digest
+# auth and is proven to reach 192.168.50.60. A GET with ?id= is required; a POST without a
+# body is rejected with HTTP 400 "Content-Length required".
+if ! tcp_probe "${SHELLY_IP}" 80; then
+    echo "  [-] ERROR: Shelly ${SHELLY_IP} not answering on TCP/80."
+elif ! SHELLY_PW="$(USER="${USER:-$(id -un)}" "${HOME}/.hermes/scripts/shelly-rpc.py" --password-only 2>/dev/null)"; then
+    echo "  [-] ERROR: could not read the Shelly password from Bitwarden."
+    echo "      bw-session.sh needs \$USER and the macOS Keychain; a non-interactive run may lack them."
+elif [ -z "${SHELLY_PW}" ]; then
+    echo "  [-] ERROR: Bitwarden returned an empty Shelly password."
 else
-    echo "  [*] Shelly script not available locally."
+    SHELLY_OUT="$(printf 'user = "admin:%s"\n' "${SHELLY_PW}" | \
+        curl -s -m 8 --digest -K - -o /dev/stdout \
+             "http://${SHELLY_IP}/rpc/Switch.GetStatus?id=0" 2>/dev/null)"
+    if [ -z "${SHELLY_OUT}" ] || echo "${SHELLY_OUT}" | grep -q 'Unauthorized\|401'; then
+        echo "  [-] ERROR: Shelly RPC auth failed (HTTP 401) or empty response."
+    else
+        echo "${SHELLY_OUT}" | jq -r '"  [+] Shelly Relay: output=" + (.output|tostring) + ", power=" + (.apower|tostring) + "W, source=" + (.source|tostring)' 2>/dev/null \
+            || echo "  [*] Shelly responded but the payload was not parseable JSON."
+    fi
 fi
+unset SHELLY_PW SHELLY_OUT
 
 echo "=== Disaster Recovery Verification Completed ==="

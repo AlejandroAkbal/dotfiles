@@ -14,3 +14,4 @@
 
 # APM install cache (generated at deploy time)
 macos/agent/apm_modules/
+.env
