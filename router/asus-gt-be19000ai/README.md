@@ -159,3 +159,14 @@ Verify: `wl -i wl0 chanspec` → `6 (0x1006)`, `wl -i wl1 chanspec` → `149/80 
 
 **Still open (completed 2026-09-29):** firmware `3.0.0.6.102_40717` (2026/08/18) -> `3.0.0.6.102_40770` (2026/09/23, kernel `Wed Sep 16 11:51:02 CST 2026`). Flashed manually via the management UI; SHA-256 `5CC54F9A...` verified. NVRAM configuration (pinned channels, boot-only ACS, NextDNS resolver) preserved across the flash; AI daughterboard restored via `/home/persist/restore.sh` with SingBox egress at `100.95.204.62:1080` verified from `hetzner-de-1`.
 
+### Staged rollback of the mitigation (started 2026-09-29)
+
+| Step | State | When |
+| --- | --- | --- |
+| 1 | Pinned `wl0=6`, `wl1=149/80` + `wl*_acs_boot_only=1` (wedge containment) | 2026-09-29 22:11 |
+| 2 | Firmware flashed to `40770` | 2026-09-29 22:48 |
+| 3 | **Auto channels (`wl*_chanspec=0`) + `wl*_acs_boot_only=1`** — acsd picks once per boot, no runtime selection | 2026-09-29 23:08 |
+| 4 | Remove `wl*_acs_boot_only` (full Auto, runtime selection restored) | **not before 2026-10-02**, only if no recurrence |
+
+Note: `40770`'s release notes are dominated by security hardening; the "wireless channel selection tool / command parameter" line sits under *Security Fixes*, so the vendor has **not** documented a fix for the ACS-wedge failure mode. Treat step 4 as an unvalidated experiment: if the wedge recurs, the signature is a same-second broadcast deauth plus `GET STA INFO failed -21`, and the Shelly watchdog will power-cycle the router ~15 min later. `scripts/asus-dr.sh` enforces the step-3 state.
+

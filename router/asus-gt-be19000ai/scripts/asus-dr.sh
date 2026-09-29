@@ -40,9 +40,12 @@ if ping -c 1 -W 2 "${ROUTER_IP}" >/dev/null 2>&1; then
                 NVRAM_CHANGED=1
             fi
         done
-        echo '  [*] Verifying Wi-Fi stability settings (fixed channels, no runtime ACS)...'
+        echo '  [*] Verifying Wi-Fi stability settings (Auto channel, boot-only ACS)...'
         WIFI_CHANGED=0
-        for pair in 'wl0_chanspec 6' 'wl1_chanspec 149/80' 'wl0_acs_boot_only 1' 'wl1_acs_boot_only 1' 'wl2_acs_boot_only 1'; do
+        # Staged rollback after the 2026-09-29 wedge: leave channels on Auto (0) so acsd picks once per
+        # boot, while wl*_acs_boot_only=1 keeps the runtime decision path off. Do NOT re-pin individual
+        # channels here; if the wedge returns, re-pin wl0 to 6 and wl1 to 149/80 (both non-DFS).
+        for pair in 'wl0_chanspec 0' 'wl1_chanspec 0' 'wl2_chanspec 0' 'wl0_acs_boot_only 1' 'wl1_acs_boot_only 1' 'wl2_acs_boot_only 1'; do
             set -- \$pair
             CURR=\$(nvram get \$1 2>/dev/null || true)
             if [ \"\$CURR\" != \"\$2\" ]; then
