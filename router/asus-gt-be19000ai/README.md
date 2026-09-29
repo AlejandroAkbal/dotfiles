@@ -157,5 +157,5 @@ nvram commit && service restart_wireless
 ```
 Verify: `wl -i wl0 chanspec` → `6 (0x1006)`, `wl -i wl1 chanspec` → `149/80 (0xe09b)`, and `grep -cE "Performing CSA|txop channel select" /jffs/syslog.log` stays flat after boot. Revert by setting the chanspecs back to `0` and `wl*_acs_boot_only=0`, then commit + `service restart_wireless`. `scripts/asus-dr.sh` re-asserts these values on every run.
 
-**Still open:** firmware `3.0.0.6.102_40717` (2026/08/18) → `3.0.0.6.102_40770` (2026/09/23), whose notes include a fix to the wireless channel-selection command handling plus Wi-Fi stability improvements. The router's own update check reports nothing pending (`webs_state_flag=0`), so it needs a manual flash from the ROG support page.
+**Still open (completed 2026-09-29):** firmware `3.0.0.6.102_40717` (2026/08/18) -> `3.0.0.6.102_40770` (2026/09/23, kernel `Wed Sep 16 11:51:02 CST 2026`). Flashed manually via the management UI; SHA-256 `5CC54F9A...` verified. NVRAM configuration (pinned channels, boot-only ACS, NextDNS resolver) preserved across the flash; AI daughterboard restored via `/home/persist/restore.sh` with SingBox egress at `100.95.204.62:1080` verified from `hetzner-de-1`.
 
