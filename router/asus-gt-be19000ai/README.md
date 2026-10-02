@@ -166,7 +166,8 @@ Verify: `wl -i wl0 chanspec` → `6 (0x1006)`, `wl -i wl1 chanspec` → `149/80 
 | 1 | Pinned `wl0=6`, `wl1=149/80` + `wl*_acs_boot_only=1` (wedge containment) | 2026-09-29 22:11 |
 | 2 | Firmware flashed to `40770` | 2026-09-29 22:48 |
 | 3 | **Auto channels (`wl*_chanspec=0`) + `wl*_acs_boot_only=1`** — acsd picks once per boot, no runtime selection | 2026-09-29 23:08 |
-| 4 | Remove `wl*_acs_boot_only` (full Auto, runtime selection restored) | **not before 2026-10-02**, only if no recurrence |
+| 4 | Remove `wl*_acs_boot_only` (full Auto, runtime selection restored) | **CANCELLED — wedge recurred 2026-10-02** |
+| 5 | **Recurrence containment: re-pinned `wl0=6`, `wl1=149/80` (non-DFS) + `wl0_acs_dfs=0`/`wl1_acs_dfs=0`, boot-only ACS kept** | 2026-10-02 13:47 |
 
-Note: `40770`'s release notes are dominated by security hardening; the "wireless channel selection tool / command parameter" line sits under *Security Fixes*, so the vendor has **not** documented a fix for the ACS-wedge failure mode. Treat step 4 as an unvalidated experiment: if the wedge recurs, the signature is a same-second broadcast deauth plus `GET STA INFO failed -21`, and the Shelly watchdog will power-cycle the router ~15 min later. `scripts/asus-dr.sh` enforces the step-3 state.
+Note: `40770`'s release notes are dominated by security hardening; the "wireless channel selection tool / command parameter" line sits under *Security Fixes*, so the vendor has **not** documented a fix for the wedge failure mode — and the wedge **recurred on 2026-10-02** on `40770` even with boot-only ACS: at 13:19:50 a same-second broadcast deauth on wl0+wl2 kicked every client (no ACS/CSA/radar lines, temps normal, no crashlog); the Shelly watchdog power-cycled the router at 13:34:23 (`WIFI_DISCONNECTED_PERSISTENT`, count 1). Notable precursor: wl1 had auto-selected DFS ch 60/160 at boot, and the 6 GHz dhd/P2P stack churned all morning (79 `dhd2: INIT` events, `WLC_SCB_DEAUTHENTICATE err -30`, `dhd_pktfwd_lut_lkup` errors) — remaining suspect. Step 4 (full Auto) is cancelled; `scripts/asus-dr.sh` enforces the pinned non-DFS state.
 

@@ -61,12 +61,14 @@ if tcp_probe "${ROUTER_IP}" 22 || ping -c 1 -W 2000 "${ROUTER_IP}" >/dev/null 2>
                 NVRAM_CHANGED=1
             fi
         done
-        echo '  [*] Verifying Wi-Fi stability settings (Auto channel, boot-only ACS)...'
+        echo '  [*] Verifying Wi-Fi stability settings (pinned non-DFS channels, boot-only ACS)...'
         WIFI_CHANGED=0
-        # Staged rollback after the 2026-09-29 wedge: leave channels on Auto (0) so acsd picks once per
-        # boot, while wl*_acs_boot_only=1 keeps the runtime decision path off. Do NOT re-pin individual
-        # channels here; if the wedge returns, re-pin wl0 to 6 and wl1 to 149/80 (both non-DFS).
-        for pair in 'wl0_chanspec 0' 'wl1_chanspec 0' 'wl2_chanspec 0' 'wl0_acs_boot_only 1' 'wl1_acs_boot_only 1' 'wl2_acs_boot_only 1'; do
+        # Wedge containment after the 2026-10-02 recurrence (mass broadcast deauth on wl0+wl2, no ACS
+        # signature; wl1 had auto-selected DFS ch 60/160 at boot). Channels are PINNED to non-DFS:
+        # wl0=6 (2.4G) and wl1=149/80 (5G). wl2 (6G) stays Auto but ACS is boot-only, and wl*_acs_dfs=0
+        # keeps auto mode off DFS entirely. Revert by setting chanspecs to 0, acs_dfs to 1 and
+        # acs_boot_only to 0, then commit + service restart_wireless.
+        for pair in 'wl0_chanspec 6' 'wl1_chanspec 149/80' 'wl2_chanspec 0' 'wl0_acs_boot_only 1' 'wl1_acs_boot_only 1' 'wl2_acs_boot_only 1' 'wl0_acs_dfs 0' 'wl1_acs_dfs 0'; do
             set -- \$pair
             CURR=\$(nvram get \$1 2>/dev/null || true)
             if [ \"\$CURR\" != \"\$2\" ]; then
