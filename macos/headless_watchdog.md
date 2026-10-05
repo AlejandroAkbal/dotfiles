@@ -85,7 +85,7 @@ Three failure modes are distinguished, because the correct action differs for ea
 
 The lock is the **only** backup signal: recovery must never be gated on a `pgrep` match, because that matches any unrelated process whose command line merely mentions the string.
 
-**There must be exactly one OrbStack recovery supervisor.** It is this user LaunchAgent, deliberately in the `gui/501` Aqua session so it works without Hermes, the gateway, or a root daemon. The Hermes cron job `c07e813d4a0b` (`orbstack-health-watchdog.py`) was retired on 2026-09-23 for that reason and must not be re-enabled; the root `headless-watchdog` treats OrbStack as delegated and takes no action. If off-host monitoring is wanted, it belongs in UptimeRobot (monitor `803068309`), not as a second actuator.
+**There must be exactly one OrbStack recovery supervisor.** It is this user LaunchAgent, deliberately in the `gui/501` Aqua session so it works without Hermes, the gateway, or a root daemon. The Hermes cron job `c07e813d4a0b`, renamed on 2026-10-05 to `RETIRED - do not re-enable: OrbStack VM Health Watchdog` (`orbstack-health-watchdog.py`), was retired on 2026-09-23 for that reason and must not be re-enabled; the root `headless-watchdog` treats OrbStack as delegated and takes no action. If off-host monitoring is wanted, it belongs in UptimeRobot (monitor `803068309`), not as a second actuator.
 
 ### Installation
 
