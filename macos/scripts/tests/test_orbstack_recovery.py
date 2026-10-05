@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import time
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -138,6 +139,20 @@ class OrbStackRecoveryTests(unittest.TestCase):
         recovery = self.recovery(current_vm_state="starting", ingress_healthy=False)
         self.assertEqual(recovery.run_cycle(now=2_000), "vm_starting")
         self.assertEqual(recovery.actions, [])
+
+    def test_stopped_daemon_never_escalates_to_a_hard_kill(self):
+        """A daemon that is simply down must be launched, never SIGKILLed."""
+        recovery = self.recovery(orb_status="down", ingress_healthy=False)
+        recovery.save_state(dict(MODULE.OrbStackRecovery.default_state(), ingress_failures=10))
+        self.assertEqual(recovery.run_cycle(now=2_000), "orbstack_started")
+        self.assertNotIn("kill_orbstack", recovery.actions)
+
+    def test_slow_vm_boot_is_not_counted_and_not_killed(self):
+        recovery = self.recovery(current_vm_state="starting", ingress_healthy=False)
+        recovery.save_state(dict(MODULE.OrbStackRecovery.default_state(), ingress_failures=10))
+        self.assertEqual(recovery.run_cycle(now=2_000), "vm_starting")
+        self.assertNotIn("kill_orbstack", recovery.actions)
+        self.assertEqual(recovery.load_state()["ingress_failures"], 10)
 
     def test_orbstack_down_launches_app_without_host_reboot(self):
         recovery = self.recovery(orb_status="down", ingress_healthy=False)
@@ -318,6 +333,13 @@ class OrbStackRecoveryTests(unittest.TestCase):
             recovery = MODULE.OrbStackRecovery(state_path=self.root / "s.json")
             self.assertTrue(recovery.vmgr_hang_marker(now))
             self.assertFalse(recovery.vmgr_hang_marker(now + 3_600))
+
+    def test_vmgr_timestamp_rolls_back_one_year_across_new_year(self):
+        now = datetime(2027, 1, 1, 0, 5, 0)
+        stamp = MODULE.OrbStackRecovery.parse_vmgr_time(
+            'vmgr | time="12-31 23:59:00" level=warning msg="x"', int(now.timestamp())
+        )
+        self.assertEqual(stamp, int(datetime(2026, 12, 31, 23, 59, 0).timestamp()))
 
     def test_missing_vmgr_log_is_not_a_hang(self):
         with patch.object(MODULE, "VMGR_LOG", self.root / "absent.log"):

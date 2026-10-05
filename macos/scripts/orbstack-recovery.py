@@ -303,8 +303,16 @@ class OrbStackRecovery:
         except ValueError:
             return None
         candidate = int(stamp.timestamp())
-        if candidate - (now if now is not None else time.time()) > 86400:
-            candidate -= 366 * 86400
+        reference_ts = now if now is not None else time.time()
+        if candidate - reference_ts > 86400:
+            # The vmgr log carries no year, so a stamp "in the future" means the line
+            # predates the new year. Roll the year back exactly - subtracting 366 days
+            # is off by one in every non-leap year - and refuse on Feb 29.
+            try:
+                stamp = stamp.replace(year=stamp.year - 1)
+            except ValueError:
+                return None
+            candidate = int(stamp.timestamp())
         return candidate
 
     def vmgr_hang_marker(self, now: Optional[int] = None) -> bool:
@@ -461,6 +469,24 @@ class OrbStackRecovery:
 
     # -------------------------------------------------------------- escalation
 
+    def count_failure(self, state: Dict[str, Any], now: int) -> None:
+        state["ingress_failures"] = int(state["ingress_failures"]) + 1
+        state["hard_kills"] = self.prune_hard_kills(list(state["hard_kills"]), now)
+        self.save_state(state)
+
+    def reset_failures(self, state: Dict[str, Any], now: int) -> None:
+        state["ingress_failures"] = 0
+        state["last_action"] = now
+        self.save_state(state)
+
+    def escalate(self, state: Dict[str, Any], now: int, reason: str) -> str:
+        if len(state["hard_kills"]) >= self.hard_kill_budget:
+            return self.give_up(state, now, reason)
+        if self.in_cooldown(state, now):
+            self.log("SKIP hard restart during recovery cooldown")
+            return "cooldown"
+        return self.hard_restart(state, now, reason)
+
     def prune_hard_kills(self, kills: List[int], now: int) -> List[int]:
         return [stamp for stamp in kills if now - stamp < self.hard_kill_window]
 
@@ -599,10 +625,6 @@ class OrbStackRecovery:
             self.log("SKIP backup in progress (backup.lock held)")
             return "backup_in_progress"
 
-        state["ingress_failures"] = int(state["ingress_failures"]) + 1
-        state["hard_kills"] = self.prune_hard_kills(list(state["hard_kills"]), now)
-        self.save_state(state)
-
         status = self.orbctl_status()
         sock_state = self.docker_sock_state()
         hang = self.vmgr_hang_marker(now)
@@ -616,27 +638,22 @@ class OrbStackRecovery:
         else:
             reason = f"orb={status} docker={sock_state}"
 
-        self.log(
-            f"WARN ingress unhealthy {state['ingress_failures']} "
-            f"orb={status} docker={sock_state} vmgr_hang={hang}"
-        )
+        self.log(f"WARN ingress unhealthy orb={status} docker={sock_state} vmgr_hang={hang}")
 
-        if wedged or int(state["ingress_failures"]) >= self.hard_restart_after:
-            if len(state["hard_kills"]) >= self.hard_kill_budget:
-                return self.give_up(state, now, reason)
-            if self.in_cooldown(state, now):
-                self.log("SKIP hard restart during recovery cooldown")
-                return "cooldown"
-            return self.hard_restart(state, now, reason)
+        # Only a wedged daemon justifies a hard kill, so this path escalates immediately
+        # and never routes through the launch logic below.
+        if wedged:
+            self.count_failure(state, now)
+            return self.escalate(state, now, reason)
 
+        # Cleanly stopped: launching is the correct action, and a count of failed L7
+        # probes must never turn into a SIGKILL for a daemon that is simply not up.
         if status != "running":
             if self.in_cooldown(state, now):
                 self.log("SKIP OrbStack launch during recovery cooldown")
                 return "cooldown"
             if self.launch_orbstack():
-                state["ingress_failures"] = 0
-                state["last_action"] = now
-                self.save_state(state)
+                self.reset_failures(state, now)
                 return "orbstack_started"
             return "orbstack_start_failed"
 
@@ -644,32 +661,35 @@ class OrbStackRecovery:
         if vm_state == "absent":
             self.log(f"ERROR {VM_NAME} is absent")
             return "vm_absent"
+        # A slow boot must not be mistaken for ill health, so nothing is counted here.
         if vm_state == "starting":
-            self.log(f"WAIT {VM_NAME}=starting")
+            self.log(f"WAIT {VM_NAME}=starting; not counting this cycle")
             return "vm_starting"
         if vm_state == "stopped":
             if self.in_cooldown(state, now):
                 self.log(f"SKIP {VM_NAME} start during recovery cooldown")
                 return "cooldown"
             if self.start_vm():
-                state["ingress_failures"] = 0
-                state["last_action"] = now
-                self.save_state(state)
+                self.reset_failures(state, now)
                 return "vm_started"
             return "vm_start_failed"
         if vm_state != "running":
             self.log(f"WARN {VM_NAME} state={vm_state}; deferring recovery")
             return "vm_unknown"
 
-        if int(state["ingress_failures"]) < self.restart_after:
+        # Daemon up, VM running, ingress failing: this is the state escalation is for.
+        self.count_failure(state, now)
+        failures = int(state["ingress_failures"])
+        self.log(f"WARN ingress unhealthy {failures} consecutive (daemon up, {VM_NAME}=running)")
+        if failures >= self.hard_restart_after:
+            return self.escalate(state, now, reason)
+        if failures < self.restart_after:
             return "ingress_failure"
         if self.in_cooldown(state, now):
             self.log("SKIP VM restart during recovery cooldown")
             return "cooldown"
         if self.restart_vm():
-            state["ingress_failures"] = 0
-            state["last_action"] = now
-            self.save_state(state)
+            self.reset_failures(state, now)
             return "vm_restarted"
         return "vm_restart_failed"
 
