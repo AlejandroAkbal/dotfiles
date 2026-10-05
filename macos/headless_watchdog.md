@@ -56,17 +56,36 @@ OrbStack supports **Start at login**, not unattended startup without a user desk
 - OrbStack relaunched at `09:24:46`; `coolify-node`, Docker, and OmniRoute recovered afterward.
 - The old TCP probes were insufficient: macOS SSH and OrbStack forwarding sockets could remain open while the VM backend was unavailable.
 
+### Incident: 2026-10-05 (VM kernel livelock)
+
+- The `coolify-node` VM livelocked at `13:14:49 ICT`: `rcu_sched detected stalls`, `sampling stacks due to VM hang` (16 times), sampled stack stuck in `do_seccomp -> bpf_int_jit_compile -> __text_poke -> kick_all_cpus_sync`.
+- The host processes stayed **alive and spinning** (`OrbStack Helper vmgr` at ~795% CPU), so `open -a OrbStack` was a no-op: the agent logged `ACTION launch OrbStack` → `ERROR OrbStack did not become ready within 60 seconds` every five minutes for over an hour and never recovered it.
+- The agent also skipped twice because its `pgrep -f mac-mini-backup` guard matched unrelated command lines that merely contained the string.
+- Recovery required `killall -9 "OrbStack Helper" "OrbStack"` plus a relaunch; containers returned within ~60s. UptimeRobot recorded a 63m43s outage (502).
+- Fix: the wedge detection and hard-kill escalation above, the lock-only backup guard, and the alerting/exit-code path.
+
 ### Recovery Contract
 
-`com.alejandro.orbstack-recovery` runs every five minutes and at user-session load. It takes action only when the host gateway and public DNS are reachable.
+`com.alejandro.orbstack-recovery` runs every two minutes and at user-session load. It takes action only when the host gateway and public DNS are reachable, and it never reboots the Mac.
 
-1. Check `orbctl status`.
-2. Check the `coolify-node` state from `orbctl list`.
-3. Probe OmniRoute through the local SNI route at `https://9router.akbal.dev/api/health` and require JSON `status=ok`.
-4. Launch OrbStack when its daemon is unavailable.
-5. Start `coolify-node` when stopped.
-6. Restart `coolify-node` only after two consecutive failed L7 probes while the VM reports `running`.
-7. Enforce a ten-minute action cooldown and never reboot the Mac.
+Three failure modes are distinguished, because the correct action differs for each:
+
+| mode | evidence | action |
+|---|---|---|
+| **stopped** | `orbctl status` != running, docker socket absent | launch OrbStack, start the VM |
+| **unhealthy** | daemon up, VM `running`, L7 probe failing | `orbctl restart coolify-node` (cheap, in-guest) |
+| **wedged** | docker socket accepts then never answers, `orbctl` times out, or `sampling stacks due to VM hang` in `~/.orbstack/log/vmgr.log` | **SIGKILL `OrbStack Helper` and `OrbStack`, then relaunch** |
+
+1. Probe OmniRoute through the local SNI route at `https://9router.akbal.dev/api/health` and require JSON `status=ok`.
+2. On failure, classify the mode as above and take the matching action.
+3. Escalate on a budget: two consecutive L7 failures restart the VM; a wedged daemon or four consecutive failures escalate to the hard kill; at most **two hard kills per rolling hour**, then the supervisor gives up, emails an alert, and exits non-zero while it keeps probing cheaply.
+4. Enforce a ten-minute action cooldown between corrective actions.
+5. Do nothing during the first 180s after boot, so a normal startup is not mistaken for a failure.
+6. While `mac-mini-backup` holds `backup.lock`, detection continues but remediation pauses; if ingress stays down for 15 consecutive skipped cycles the supervisor emails an alert instead of staying silent.
+
+The lock is the **only** backup signal: recovery must never be gated on a `pgrep` match, because that matches any unrelated process whose command line merely mentions the string.
+
+**There must be exactly one OrbStack recovery supervisor.** It is this user LaunchAgent, deliberately in the `gui/501` Aqua session so it works without Hermes, the gateway, or a root daemon. The Hermes cron job `c07e813d4a0b` (`orbstack-health-watchdog.py`) was retired on 2026-09-23 for that reason and must not be re-enabled; the root `headless-watchdog` treats OrbStack as delegated and takes no action. If off-host monitoring is wanted, it belongs in UptimeRobot (monitor `803068309`), not as a second actuator.
 
 ### Installation
 
