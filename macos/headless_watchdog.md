@@ -87,6 +87,20 @@ The lock is the **only** backup signal: recovery must never be gated on a `pgrep
 
 **There must be exactly one OrbStack recovery supervisor.** It is this user LaunchAgent, deliberately in the `gui/501` Aqua session so it works without Hermes, the gateway, or a root daemon. The Hermes cron job `c07e813d4a0b` (`orbstack-health-watchdog.py`) was retired on 2026-09-23 for that reason and must not be re-enabled; the root `headless-watchdog` treats OrbStack as delegated and takes no action. If off-host monitoring is wanted, it belongs in UptimeRobot (monitor `803068309`), not as a second actuator.
 
+### Surviving bundle replacement (2026-10-13 incident)
+
+OrbStack's cask is marked `auto_updates` (Sparkle), but the daily 07:15 maintenance runs `brew upgrade --cask` with `--greedy-auto-updates`, which re-installs the cask anyway. That re-install replaces the app bundle, empties `/Library/PrivilegedHelperTools`, and stamps `com.apple.quarantine` ("Homebrew Cask") on every file. On a headless host Gatekeeper's user consent can never be given, so AppleSystemPolicy denies execution of the sub-binaries (`Security policy would not allow process` for `scli` / `docker-tools`) and the app freezes inside `_dyld_start`; `orbctl` blocks and the daemon never comes back. The recovery supervisor cannot heal this: every escalation is another frozen launch.
+
+The exec denial is **keyed to the literal `/Applications/OrbStack.app` path**. It survived bundle removal, a clean `ditto --noextattr --noacl --norsrc` replacement, `tccutil reset SystemPolicyAppBundles`, and LaunchServices re-registration. The same clean bundle copied to any other path (`~/Applications/OrbStack.app`, `/Applications/OrbStackTestA.app`) executed fine (verified 2026-10-13 with cold `kubectl version --client` probes).
+
+The durable layout therefore is:
+
+- **real app bundle**: `$HOME/Applications/OrbStack.app` — a clean `ditto --noextattr --noacl --norsrc` copy that executes;
+- **canonical path**: `/Applications/OrbStack.app` — a **symlink** to the real copy, so the root-owned `/usr/local/bin` CLI links, the `/opt/homebrew/bin` links, the login item, and every script keep working unchanged;
+- `com.alejandro.orbstack-app-boot` opens the app and runs `orbctl start` at login, on top of the recovery supervisor.
+
+`orbstack-repair` (idempotent; `--check` only reports) enforces that layout and starts the daemon. The maintenance script skips the `orbstack` cask entirely and then runs `orbstack-repair` as a safety net for other replacement paths (macOS updates, manual reinstalls). Manual recovery: run `orbstack-repair`, read `~/.local/var/log/orbstack-repair.log`.
+
 ### Installation
 
 ```bash
@@ -97,17 +111,27 @@ install -m 0755 macos/scripts/orbstack-recovery.py \
   "$HOME/.local/bin/orbstack-recovery.py"
 install -m 0644 macos/launchagents/com.alejandro.orbstack-recovery.plist \
   "$HOME/Library/LaunchAgents/com.alejandro.orbstack-recovery.plist"
+install -m 0755 macos/scripts/orbstack-repair \
+  "$HOME/.local/bin/orbstack-repair"
+install -m 0644 macos/launchagents/com.alejandro.orbstack-app-boot.plist \
+  "$HOME/Library/LaunchAgents/com.alejandro.orbstack-app-boot.plist"
 launchctl bootout "gui/$(id -u)/com.alejandro.orbstack-recovery" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" \
   "$HOME/Library/LaunchAgents/com.alejandro.orbstack-recovery.plist"
+launchctl bootout "gui/$(id -u)/com.alejandro.orbstack-app-boot" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" \
+  "$HOME/Library/LaunchAgents/com.alejandro.orbstack-app-boot.plist"
 ```
 
 ### Verification
 
 ```bash
 launchctl print "gui/$(id -u)/com.alejandro.orbstack-recovery"
+launchctl print "gui/$(id -u)/com.alejandro.orbstack-app-boot"
 python3 "$HOME/.local/bin/orbstack-recovery.py"
+"$HOME/.local/bin/orbstack-repair" --check
 tail -n 20 "$HOME/.local/var/log/orbstack-recovery.log"
+tail -n 20 "$HOME/.local/var/log/orbstack-repair.log"
 curl -sk --resolve 9router.akbal.dev:443:127.0.0.1 \
   https://9router.akbal.dev/api/health
 ```
