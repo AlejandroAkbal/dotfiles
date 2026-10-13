@@ -86,6 +86,11 @@ if [[ -n "$brew_bin" ]]; then
       jump-desktop-connect|tailscale-app)
         # Skip unattended upgrades for casks requiring interactive sudo authentication
         ;;
+      orbstack)
+        # OrbStack self-updates (Sparkle); an unattended brew re-install replaces the
+        # bundle and can leave it wedged on this headless host. Skip it — the app
+        # updates itself.
+        ;;
       *)
         upgradeable_casks+=("$c")
         ;;
