@@ -86,6 +86,12 @@ if [[ -n "$brew_bin" ]]; then
       jump-desktop-connect|tailscale-app)
         # Skip unattended upgrades for casks requiring interactive sudo authentication
         ;;
+      orbstack)
+        # OrbStack self-updates (Sparkle) and its cask is auto_updates; an unattended
+        # brew re-install replaces the bundle, strips its privileged helper, and
+        # quarantines it, which wedges the app on this headless host. See
+        # macos/headless_watchdog.md; the orbstack-repair run below is the safety net.
+        ;;
       *)
         upgradeable_casks+=("$c")
         ;;
@@ -112,6 +118,18 @@ else
   important=1
 fi
 
+# Keep the OrbStack layout headless-safe: any bundle replacement (auto-update,
+# manual reinstall) must leave a clean copy in ~/Applications and the canonical
+# symlink at /Applications/OrbStack.app in place.
+orbstack_repair="$HOME/.local/bin/orbstack-repair"
+if [[ -x "$orbstack_repair" ]]; then
+  printf '\n--- OrbStack layout check ---\n'
+  if ! "$orbstack_repair"; then
+    append_report 'OrbStack layout repair failed; see ~/.local/var/log/orbstack-repair.log'
+    failed=1
+    important=1
+  fi
+fi
 
 system_daemon="$tmp_dir/system-daemon.txt"
 if launchctl print system/com.alejandro.daily-softwareupdate >"$system_daemon" 2>&1; then

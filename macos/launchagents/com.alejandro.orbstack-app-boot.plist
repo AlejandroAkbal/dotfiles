@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.alejandro.orbstack-app-boot</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>/usr/bin/open /Users/alejandro/Applications/OrbStack.app; sleep 15; /opt/homebrew/bin/orbctl start || true; echo "boot check: $(/opt/homebrew/bin/orbctl status 2>&amp;1)"</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+    <key>StandardOutPath</key>
+    <string>/Users/alejandro/.local/var/log/orbstack-app-boot.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/alejandro/.local/var/log/orbstack-app-boot.log</string>
+</dict>
+</plist>

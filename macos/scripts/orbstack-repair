@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# orbstack-repair — enforce the headless-safe OrbStack layout after bundle replacement.
+#
+# Layout (see macos/headless_watchdog.md -> "Surviving bundle replacement"):
+#   real app  : $HOME/Applications/OrbStack.app   (clean ditto copy, no xattrs)
+#   canonical : /Applications/OrbStack.app        (symlink -> the real copy)
+#
+# Why: after an unattended brew cask re-install, the fresh bundle at the literal
+# /Applications/OrbStack.app path is quarantined. On a headless host Gatekeeper's
+# user consent can never be given, so AppleSystemPolicy denies execution of the
+# sub-binaries ("Security policy would not allow process") — and the denial is
+# keyed to that exact path, surviving even a clean replacement of the bundle
+# there. A clean copy at a different path executes fine, and the canonical
+# symlink keeps every existing reference (root-owned /usr/local/bin CLI links,
+# /opt/homebrew/bin links, login item, scripts) working unchanged.
+#
+# Usage: orbstack-repair [--check] [--force]
+#   --check   report the layout status, change nothing (exit 1 when repair is needed)
+#   --force   re-stage the app copy even when the layout already looks healthy
+#
+# Exit codes: 0 = healthy or repaired, 1 = repair needed (--check) or repair failed.
+
+set -uo pipefail
+
+CANONICAL="/Applications/OrbStack.app"
+REAL="$HOME/Applications/OrbStack.app"
+LOG_DIR="$HOME/.local/var/log"
+LOG="$LOG_DIR/orbstack-repair.log"
+PROBE_REL="Contents/MacOS/xbin/kubectl"
+ORBCTL_REL="Contents/MacOS/bin/orbctl"
+
+CHECK=0
+FORCE=0
+for arg in "$@"; do
+  case "$arg" in
+    --check) CHECK=1 ;;
+    --force) FORCE=1 ;;
+    *) echo "usage: orbstack-repair [--check] [--force]" >&2; exit 2 ;;
+  esac
+done
+
+mkdir -p "$LOG_DIR" "$HOME/Applications" || exit 1
+
+log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" "$*" | tee -a "$LOG"; }
+
+# Run a command with a hard timeout. No GNU coreutils on headless macOS hosts;
+# perl's alarm survives exec, so this behaves like `timeout`.
+run_bounded() {
+  local secs="$1"; shift
+  /usr/bin/perl -e 'alarm shift; exec @ARGV' "$secs" "$@" 2>/dev/null
+}
+
+# Print the repair reason when the layout is unhealthy; print nothing when healthy.
+detect_reason() {
+  if [[ -L "$CANONICAL" ]]; then
+    local target
+    target="$(readlink "$CANONICAL")"
+    [[ "$target" == "$REAL" ]] || { echo "canonical symlink points at '$target', expected '$REAL'"; return 0; }
+  elif [[ -d "$CANONICAL" ]]; then
+    echo "canonical path is a real directory (post-upgrade reinstall); re-staging"
+    return 0
+  else
+    echo "canonical path missing"; return 0
+  fi
+  [[ -d "$REAL" ]] || { echo "real app copy missing at $REAL"; return 0; }
+  run_bounded 10 "$REAL/$PROBE_REL" version --client >/dev/null 2>&1 \
+    || { echo "real copy at $REAL fails its exec probe (path poison)"; return 0; }
+  return 0
+}
+
+# Stage a clean copy and restore the canonical symlink.
+perform_repair() {
+  local src
+  if [[ -d "$CANONICAL" && ! -L "$CANONICAL" ]]; then
+    src="$CANONICAL"
+  elif [[ -d "$REAL" ]]; then
+    src="$REAL"
+  else
+    log "ERROR: no usable app bundle to stage from (neither $CANONICAL nor $REAL exists); reinstall OrbStack first"
+    return 1
+  fi
+
+  local stage="$HOME/Applications/.OrbStack.stage.$$" bak="$HOME/Applications/.OrbStack.bak.$$"
+  log "staging clean copy from $src"
+  rm -rf "$stage" "$bak"
+  ditto --noextattr --noacl --norsrc "$src" "$stage" || { log "ERROR: ditto failed"; rm -rf "$stage"; return 1; }
+
+  if [[ -e "$REAL" || -L "$REAL" ]]; then
+    mv "$REAL" "$bak"
+  fi
+  if ! mv "$stage" "$REAL"; then
+    log "ERROR: could not move staged copy into place"
+    [[ -e "$bak" ]] && mv "$bak" "$REAL"
+    rm -rf "$stage"
+    return 1
+  fi
+  rm -rf "$bak"
+
+  rm -rf "$CANONICAL"   # safe: the content lives in $REAL now
+  if ! ln -s "$REAL" "$CANONICAL"; then
+    log "ERROR: could not create canonical symlink"
+    return 1
+  fi
+
+  if run_bounded 10 "$REAL/$PROBE_REL" version --client >/dev/null 2>&1 \
+     && run_bounded 10 "$CANONICAL/$PROBE_REL" version --client >/dev/null 2>&1; then
+    log "repair complete: $CANONICAL -> $REAL"
+    return 0
+  fi
+  log "ERROR: staged copy fails its exec probe"
+  return 1
+}
+
+reason="$(detect_reason)"
+if [[ -n "$reason" ]]; then
+  if (( CHECK )); then
+    log "CHECK: repair needed: $reason"
+    exit 1
+  fi
+  log "repair needed: $reason"
+  perform_repair || exit 1
+elif (( FORCE )); then
+  if (( CHECK )); then
+    log "CHECK: layout healthy (--force ignored in check mode)"
+    exit 0
+  fi
+  log "--force requested; re-staging"
+  perform_repair || exit 1
+elif (( CHECK )); then
+  log "CHECK: layout healthy"
+  exit 0
+fi
+
+# Ensure the daemon/VM is up (a no-op when already running).
+ORBCTL="$REAL/$ORBCTL_REL"
+if ! run_bounded 20 "$ORBCTL" status 2>/dev/null | grep -q "Running"; then
+  log "daemon not running; starting it"
+  run_bounded 180 "$ORBCTL" start || log "WARN: orbctl start did not complete cleanly"
+fi
+log "status: $(run_bounded 20 "$ORBCTL" status 2>&1 | tr '\n' ' ')"
+exit 0

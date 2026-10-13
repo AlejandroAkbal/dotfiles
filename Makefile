@@ -41,6 +41,12 @@ mac-mini-check:
 	@cmp -s macos/scripts/send-email.py "$$HOME/.hermes/scripts/send-email.py"
 	@plutil -lint "$$HOME/Library/LaunchAgents/com.alejandro.mac-mini-backup.plist" >/dev/null
 	@launchctl print "gui/$$(id -u)/com.alejandro.mac-mini-backup" >/dev/null
+	@cmp -s macos/scripts/orbstack-repair "$$HOME/.local/bin/orbstack-repair"
+	@cmp -s macos/launchagents/com.alejandro.orbstack-app-boot.plist "$$HOME/Library/LaunchAgents/com.alejandro.orbstack-app-boot.plist"
+	@plutil -lint "$$HOME/Library/LaunchAgents/com.alejandro.orbstack-app-boot.plist" >/dev/null
+	@launchctl print "gui/$$(id -u)/com.alejandro.orbstack-app-boot" >/dev/null
+	@test -L /Applications/OrbStack.app
+	@test "$$(readlink /Applications/OrbStack.app)" = "$$HOME/Applications/OrbStack.app"
 	@test "$$(defaults read com.apple.finder AppleShowAllExtensions)" = 1
 	@/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate | grep -q 'enabled'
 	@/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode | grep -q 'on'
